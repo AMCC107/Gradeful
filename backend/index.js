@@ -6,15 +6,17 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middlewares
-app.use(cors()); // Permite peticiones de otros orígenes (tu frontend)
-app.use(express.json()); // Permite recibir datos en formato JSON en el body de las peticiones
+app.use(cors());
+app.use(express.json());
 
-// Ruta de prueba
-app.get('/api/status', (req, res) => {
-  res.json({ message: '¡El backend con Express está funcionando correctamente!' });
+app.get('/', (req, res) => {
+  res.send('Hello World!');
 });
 
-// Iniciar servidor
+app.get('/api/status', (req, res) => {
+  res.json({ message: '¡El backend con Express está funcionando!' });
+});
+
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });
