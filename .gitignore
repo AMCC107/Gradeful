@@ -7,24 +7,39 @@ node_modules/
 .env.*.local
 !.env.example
 
+# Builds
+dist/
+dist-ssr/
+build/
+
 # Logs
 logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
+yarn-error.log*
 pnpm-debug.log*
+lerna-debug.log*
 
 # Tests / cobertura
 coverage/
 
-# Caché
+# Caché de herramientas
+.vite/
+.cache/
 .eslintcache
 
 # Sistema operativo
 .DS_Store
 Thumbs.db
+Desktop.ini
 
 # Editores / IDE
 .vscode/*
 !.vscode/extensions.json
 .idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
