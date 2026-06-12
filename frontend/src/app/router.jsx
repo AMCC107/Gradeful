@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import LoginPageController from '../controllers/LoginPageController';
 import StudentPortalController from '../controllers/StudentPortalController';
 import AdminPortalController from '../controllers/AdminPortalController';
+import ParentPortalController from '../controllers/ParentPortalController';
 import RootRedirect from '../routes/RootRedirect';
 import PortalPlaceholderView from '../views/portal/PortalPlaceholderView';
 
@@ -10,6 +11,7 @@ function AppRouter() {
     <Routes>
       <Route path="/login" element={<LoginPageController />} />
 
+      {/* Portal estudiantil */}
       <Route path="/portal" element={<StudentPortalController />}>
         <Route index element={<Navigate to="resumen" replace />} />
         <Route path="resumen" element={<PortalPlaceholderView />} />
@@ -19,6 +21,14 @@ function AppRouter() {
         <Route path="tramites" element={<PortalPlaceholderView />} />
       </Route>
 
+      {/* Portal de padres — solo Calificaciones y Pagos */}
+      <Route path="/padre" element={<ParentPortalController />}>
+        <Route index element={<Navigate to="calificaciones" replace />} />
+        <Route path="calificaciones" element={<PortalPlaceholderView />} />
+        <Route path="pagos" element={<PortalPlaceholderView />} />
+      </Route>
+
+      {/* Panel de administración (Director) */}
       <Route path="/admin" element={<AdminPortalController />}>
         <Route index element={<Navigate to="gestion-alumnos" replace />} />
         <Route path="resumen" element={<PortalPlaceholderView />} />

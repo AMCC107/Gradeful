@@ -31,3 +31,9 @@ export const ADMIN_NAV_ITEMS = [
   { id: 'tramites', label: 'Control de Trámites', path: '/admin/tramites', icon: ClipboardList },
   { id: 'configuracion', label: 'Configuración Global', path: '/admin/configuracion', icon: Settings },
 ];
+
+// Padre de familia: solo ve Calificaciones y Pagos
+export const PADRE_NAV_ITEMS = [
+  { id: 'calificaciones', label: 'Calificaciones', path: '/padre/calificaciones', icon: GraduationCap },
+  { id: 'pagos', label: 'Colegiatura y Pagos', path: '/padre/pagos', icon: CreditCard },
+];

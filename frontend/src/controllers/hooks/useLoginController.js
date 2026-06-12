@@ -53,6 +53,7 @@ export function useLoginController() {
       onPasswordChange: setPassword,
       onSubmit: handleSubmit,
       onDemoStudent: () => handleDemoAccess(DEMO_USERS.student),
+      onDemoPadre: () => handleDemoAccess(DEMO_USERS.padre),
       onDemoAdmin: () => handleDemoAccess(DEMO_USERS.admin),
     },
     showDemoButtons: import.meta.env.DEV,

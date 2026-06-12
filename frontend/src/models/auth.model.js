@@ -22,14 +22,20 @@ export function getUserProfile() {
   const user = getAuthUser();
   if (!user) return null;
 
-  const isAdmin = user.role === ROLES.ADMIN;
+  const isAdmin  = user.role === ROLES.ADMIN;
+  const isPadre  = user.role === ROLES.PADRE;
+
+  let displayId;
+  if (isAdmin)       displayId = user.adminId  ?? user.id ?? '—';
+  else if (isPadre)  displayId = user.parentId ?? user.id ?? '—';
+  else               displayId = user.studentId ?? user.id ?? '—';
+
+  const defaultName = isAdmin ? 'Administrador' : isPadre ? 'Padre/Tutor' : 'Estudiante';
 
   return {
-    name: user.name ?? user.email ?? (isAdmin ? 'Administrador' : 'Estudiante'),
+    name: user.name ?? user.email ?? defaultName,
     role: user.role,
-    displayId: isAdmin
-      ? (user.adminId ?? user.id ?? '—')
-      : (user.studentId ?? user.id ?? '—'),
+    displayId,
     email: user.email,
   };
 }
@@ -58,6 +64,12 @@ export const DEMO_USERS = {
     studentId: 'EST-2024-0847',
     email: 'maria@gradeful.edu',
     role: ROLES.STUDENT,
+  },
+  padre: {
+    name: 'Carlos González',
+    parentId: 'PAD-2024-0321',
+    email: 'carlos.gonzalez@mail.com',
+    role: ROLES.PADRE,
   },
   admin: {
     name: 'Lic. Roberto Pérez',
