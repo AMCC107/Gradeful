@@ -14,10 +14,9 @@ node_modules
 dist
 dist-ssr
 
-# Variables de entorno
+# Variables de entorno (nunca versionar secretos)
 .env
-.env.local
-.env.*.local
+.env.*
 !.env.example
 
 # Caché

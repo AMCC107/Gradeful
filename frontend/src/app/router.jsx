@@ -5,6 +5,9 @@ import AdminPortalController from '../controllers/AdminPortalController';
 import ParentPortalController from '../controllers/ParentPortalController';
 import RootRedirect from '../routes/RootRedirect';
 import PortalPlaceholderView from '../views/portal/PortalPlaceholderView';
+import UserManagement from '../views/admin/UserManagement';
+import RoleManagement from '../views/admin/RoleManagement';
+import UserProfile from '../views/shared/UserProfile';
 
 function AppRouter() {
   return (
@@ -15,17 +18,18 @@ function AppRouter() {
       <Route path="/portal" element={<StudentPortalController />}>
         <Route index element={<Navigate to="resumen" replace />} />
         <Route path="resumen" element={<PortalPlaceholderView />} />
-        <Route path="mi-informacion" element={<PortalPlaceholderView />} />
+        <Route path="mi-informacion" element={<UserProfile />} />
         <Route path="calificaciones" element={<PortalPlaceholderView />} />
         <Route path="pagos" element={<PortalPlaceholderView />} />
         <Route path="tramites" element={<PortalPlaceholderView />} />
       </Route>
 
-      {/* Portal de padres — solo Calificaciones y Pagos */}
+      {/* Portal de padres — Calificaciones, Pagos y Perfil */}
       <Route path="/padre" element={<ParentPortalController />}>
         <Route index element={<Navigate to="calificaciones" replace />} />
         <Route path="calificaciones" element={<PortalPlaceholderView />} />
         <Route path="pagos" element={<PortalPlaceholderView />} />
+        <Route path="perfil" element={<UserProfile />} />
       </Route>
 
       {/* Panel de administración (Director) */}
@@ -33,9 +37,12 @@ function AppRouter() {
         <Route index element={<Navigate to="gestion-alumnos" replace />} />
         <Route path="resumen" element={<PortalPlaceholderView />} />
         <Route path="gestion-alumnos" element={<PortalPlaceholderView />} />
+        <Route path="gestion-usuarios" element={<UserManagement />} />
+        <Route path="gestion-roles" element={<RoleManagement />} />
         <Route path="registro-notas" element={<PortalPlaceholderView />} />
         <Route path="tesoreria" element={<PortalPlaceholderView />} />
         <Route path="tramites" element={<PortalPlaceholderView />} />
+        <Route path="perfil" element={<UserProfile />} />
         <Route path="configuracion" element={<PortalPlaceholderView />} />
       </Route>
 

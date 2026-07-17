@@ -7,8 +7,11 @@ const SEGMENT_LABELS = {
   pagos: 'Colegiatura y Pagos',
   tramites: 'Trámites',
   'gestion-alumnos': 'Gestión de Alumnos',
+  'gestion-usuarios': 'Gestión de Usuarios',
+  'gestion-roles': 'Gestión de Roles',
   'registro-notas': 'Registro de Notas',
   tesoreria: 'Tesorería y Pagos',
+  perfil: 'Mi Perfil',
   configuracion: 'Configuración Global',
 };
 
