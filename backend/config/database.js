@@ -59,6 +59,10 @@ async function seedRolesAndPermissions(db) {
     { nombre: 'gestionar_profesores', descripcion: 'CRUD de profesores' },
     { nombre: 'gestionar_materias', descripcion: 'CRUD de materias' },
     { nombre: 'gestionar_cursos', descripcion: 'CRUD de cursos' },
+    { nombre: 'gestionar_grupos', descripcion: 'CRUD de grupos académicos' },
+    { nombre: 'gestionar_inscripciones', descripcion: 'Inscribir alumnos a grupos' },
+    { nombre: 'gestionar_actividades', descripcion: 'Crear y editar actividades/tareas de grupos' },
+    { nombre: 'ver_actividades', descripcion: 'Consultar actividades y tareas asignadas' },
   ];
 
   for (const permission of permissions) {
@@ -74,8 +78,15 @@ async function seedRolesAndPermissions(db) {
   const rolePermissionMap = {
     1: allPermissions.map((p) => p.nombre),
     2: ['ver_perfil', 'editar_perfil', 'ver_calificaciones', 'gestionar_pagos'],
-    3: ['ver_perfil', 'editar_perfil', 'ver_calificaciones'],
-    4: ['ver_perfil', 'editar_perfil', 'ver_calificaciones', 'editar_calificaciones'],
+    3: ['ver_perfil', 'editar_perfil', 'ver_calificaciones', 'ver_actividades'],
+    4: [
+      'ver_perfil',
+      'editar_perfil',
+      'ver_calificaciones',
+      'editar_calificaciones',
+      'gestionar_actividades',
+      'ver_actividades',
+    ],
   };
 
   for (const [roleId, names] of Object.entries(rolePermissionMap)) {
@@ -207,6 +218,37 @@ async function initDatabase() {
       nombre TEXT NOT NULL,
       nivel TEXT NOT NULL,
       UNIQUE (nombre, nivel)
+    );
+
+    CREATE TABLE IF NOT EXISTS groups (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      course_id INTEGER NOT NULL,
+      subject_id INTEGER NOT NULL,
+      teacher_id INTEGER NOT NULL,
+      capacidad_maxima INTEGER NOT NULL,
+      FOREIGN KEY (course_id) REFERENCES courses(id),
+      FOREIGN KEY (subject_id) REFERENCES subjects(id),
+      FOREIGN KEY (teacher_id) REFERENCES teachers(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS enrollments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      group_id INTEGER NOT NULL,
+      student_id INTEGER NOT NULL,
+      fecha_inscripcion TEXT NOT NULL DEFAULT (datetime('now')),
+      UNIQUE (group_id, student_id),
+      FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE,
+      FOREIGN KEY (student_id) REFERENCES students(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS activities_tasks (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      group_id INTEGER NOT NULL,
+      titulo TEXT NOT NULL,
+      descripcion TEXT,
+      tipo TEXT NOT NULL CHECK (tipo IN ('actividad', 'tarea')),
+      fecha_entrega TEXT NOT NULL,
+      FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE
     );
   `);
 

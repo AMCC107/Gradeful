@@ -39,6 +39,13 @@ function LoginPageController() {
           >
             Demo Director (Rol 1)
           </button>
+          <button
+            type="button"
+            onClick={handlers.onDemoTeacher}
+            className="rounded-full border border-amber-300 bg-white px-4 py-2 text-xs font-medium text-amber-700 shadow-sm transition hover:border-amber-500 hover:text-amber-800"
+          >
+            Demo Profesor (Rol 4)
+          </button>
         </div>
       )}
     </div>

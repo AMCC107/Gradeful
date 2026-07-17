@@ -12,6 +12,7 @@ function mapAuthUser(row) {
     adminId: row.role_id === 1 ? `ADM-${String(row.id).padStart(3, '0')}` : undefined,
     parentId: row.role_id === 2 ? `PAD-${String(row.id).padStart(4, '0')}` : undefined,
     studentId: row.role_id === 3 ? `EST-${String(row.id).padStart(4, '0')}` : undefined,
+    teacherId: row.role_id === 4 ? `DOC-${String(row.id).padStart(3, '0')}` : undefined,
   };
 }
 

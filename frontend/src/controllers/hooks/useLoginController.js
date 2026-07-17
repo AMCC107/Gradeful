@@ -83,6 +83,7 @@ export function useLoginController() {
       onDemoStudent: () => handleDemoAccess(DEMO_USERS.student),
       onDemoPadre: () => handleDemoAccess(DEMO_USERS.padre),
       onDemoAdmin: () => handleDemoAccess(DEMO_USERS.admin),
+      onDemoTeacher: () => handleDemoAccess(DEMO_USERS.teacher),
     },
     showDemoButtons: import.meta.env.DEV,
   };

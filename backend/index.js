@@ -11,6 +11,9 @@ const studentsRoutes = require('./routes/students.routes');
 const teachersRoutes = require('./routes/teachers.routes');
 const subjectsRoutes = require('./routes/subjects.routes');
 const coursesRoutes = require('./routes/courses.routes');
+const groupsRoutes = require('./routes/groups.routes');
+const enrollmentsRoutes = require('./routes/enrollments.routes');
+const activitiesRoutes = require('./routes/activities.routes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -34,6 +37,9 @@ app.use('/api/students', studentsRoutes);
 app.use('/api/teachers', teachersRoutes);
 app.use('/api/subjects', subjectsRoutes);
 app.use('/api/courses', coursesRoutes);
+app.use('/api/groups', groupsRoutes);
+app.use('/api/enrollments', enrollmentsRoutes);
+app.use('/api/activities', activitiesRoutes);
 
 async function start() {
   try {
