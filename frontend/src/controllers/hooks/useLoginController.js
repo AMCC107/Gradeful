@@ -41,9 +41,37 @@ export function useLoginController() {
     }
   };
 
-  const handleDemoAccess = (demoUser) => {
-    saveSession({ token: 'demo-token', user: demoUser });
-    navigate(getHomePathByRole(demoUser.role), { replace: true });
+  const handleDemoAccess = async (demoUser) => {
+    if (isLoading) return;
+
+    setError('');
+    setIsLoading(true);
+
+    try {
+      const { token, user } = await loginWithCredentials(demoUser.email, demoUser.password);
+      saveSession({
+        token,
+        user: user
+          ? { ...demoUser, ...user, role: user.role ?? demoUser.role }
+          : demoUser,
+      });
+      redirectAfterAuth(user ?? demoUser);
+    } catch (err) {
+      const isNetwork =
+        err?.message?.includes('Failed to fetch') ||
+        err?.message?.includes('NetworkError') ||
+        err?.name === 'TypeError';
+
+      if (isNetwork) {
+        saveSession({ token: 'demo-token', user: demoUser });
+        navigate(getHomePathByRole(demoUser.role), { replace: true });
+        setError('Backend no disponible. Entraste en modo demo local.');
+      } else {
+        setError(err?.message || 'No se pudo iniciar la sesión demo.');
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return {

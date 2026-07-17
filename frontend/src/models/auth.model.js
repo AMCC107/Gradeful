@@ -64,17 +64,20 @@ export const DEMO_USERS = {
     studentId: 'EST-2024-0847',
     email: 'maria@gradeful.edu',
     role: ROLES.STUDENT,
+    password: 'estudiante123',
   },
   padre: {
     name: 'Carlos González',
     parentId: 'PAD-2024-0321',
     email: 'carlos.gonzalez@mail.com',
     role: ROLES.PADRE,
+    password: 'padre123',
   },
   admin: {
     name: 'Lic. Roberto Pérez',
     adminId: 'ADM-2024-001',
     email: 'roberto.perez@gradeful.edu',
     role: ROLES.ADMIN,
+    password: 'admin123',
   },
 };

@@ -1,11 +1,19 @@
 # Dependencias
 node_modules/
 
-# Variables de entorno (mantener .env.example versionado)
+# Variables de entorno (nunca versionar secretos)
 .env
-.env.local
-.env.*.local
+.env.*
 !.env.example
+
+# Base de datos / archivos locales (SQLite)
+data/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
 
 # Builds
 dist/
