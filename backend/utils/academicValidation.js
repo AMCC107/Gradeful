@@ -105,11 +105,90 @@ function validateCoursePayload(body) {
   return validationResult(errors, { nombre, nivel });
 }
 
+function validateGroupPayload(body) {
+  const errors = {};
+  const courseId = parsePositiveId(body.course_id, 'course_id', errors, 'El curso');
+  const subjectId = parsePositiveId(body.subject_id, 'subject_id', errors, 'La materia');
+  const teacherId = parsePositiveId(body.teacher_id, 'teacher_id', errors, 'El profesor');
+
+  let capacidad = null;
+  if (body.capacidad_maxima === undefined || body.capacidad_maxima === null || body.capacidad_maxima === '') {
+    errors.capacidad_maxima = 'La capacidad máxima es obligatoria.';
+  } else {
+    capacidad = Number(body.capacidad_maxima);
+    if (Number.isNaN(capacidad) || !Number.isInteger(capacidad) || capacidad < 1) {
+      errors.capacidad_maxima = 'La capacidad debe ser un entero mayor o igual a 1.';
+    }
+  }
+
+  return validationResult(errors, {
+    course_id: courseId,
+    subject_id: subjectId,
+    teacher_id: teacherId,
+    capacidad_maxima: capacidad,
+  });
+}
+
+function validateEnrollmentPayload(body) {
+  const errors = {};
+  const groupId = parsePositiveId(body.group_id, 'group_id', errors, 'El grupo');
+  const studentId = parsePositiveId(body.student_id, 'student_id', errors, 'El alumno');
+
+  return validationResult(errors, {
+    group_id: groupId,
+    student_id: studentId,
+  });
+}
+
+const ACTIVITY_TYPES = ['actividad', 'tarea'];
+const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+
+function validateActivityPayload(body) {
+  const errors = {};
+  const groupId = parsePositiveId(body.group_id, 'group_id', errors, 'El grupo');
+  const titulo = typeof body.titulo === 'string' ? body.titulo.trim() : '';
+  const descripcion =
+    typeof body.descripcion === 'string' ? body.descripcion.trim() : '';
+  const tipo = typeof body.tipo === 'string' ? body.tipo.trim().toLowerCase() : '';
+  const fechaEntrega =
+    typeof body.fecha_entrega === 'string' ? body.fecha_entrega.trim() : '';
+
+  if (!titulo) {
+    errors.titulo = 'El título es obligatorio.';
+  } else if (titulo.length < 3) {
+    errors.titulo = 'El título debe tener al menos 3 caracteres.';
+  }
+
+  if (!tipo) {
+    errors.tipo = 'El tipo es obligatorio.';
+  } else if (!ACTIVITY_TYPES.includes(tipo)) {
+    errors.tipo = 'El tipo debe ser "actividad" o "tarea".';
+  }
+
+  if (!fechaEntrega) {
+    errors.fecha_entrega = 'La fecha de entrega es obligatoria.';
+  } else if (!DATE_REGEX.test(fechaEntrega)) {
+    errors.fecha_entrega = 'Usa el formato YYYY-MM-DD.';
+  }
+
+  return validationResult(errors, {
+    group_id: groupId,
+    titulo,
+    descripcion: descripcion || null,
+    tipo,
+    fecha_entrega: fechaEntrega,
+  });
+}
+
 module.exports = {
   ROLE_STUDENT,
   ROLE_TEACHER,
+  ACTIVITY_TYPES,
   validateStudentPayload,
   validateTeacherPayload,
   validateSubjectPayload,
   validateCoursePayload,
+  validateGroupPayload,
+  validateEnrollmentPayload,
+  validateActivityPayload,
 };

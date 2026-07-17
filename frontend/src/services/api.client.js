@@ -1,8 +1,38 @@
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
-const AUTH_TOKEN_KEY = 'authToken';
+
+export class ApiError extends Error {
+  constructor(message, { status = 500, errors = null } = {}) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.errors = errors;
+  }
+}
+
+export async function parseResponse(response) {
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new ApiError(data?.message || 'Ocurrió un error en la solicitud.', {
+      status: response.status,
+      errors: data?.errors ?? null,
+    });
+  }
+  return data;
+}
+
+export function buildQuery(filters = {}) {
+  const params = new URLSearchParams();
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && String(value).trim() !== '') {
+      params.set(key, String(value).trim());
+    }
+  });
+  const query = params.toString();
+  return query ? `?${query}` : '';
+}
 
 export function getAuthToken() {
-  return localStorage.getItem(AUTH_TOKEN_KEY);
+  return localStorage.getItem('authToken');
 }
 
 export function authHeaders(extra = {}) {
@@ -12,14 +42,6 @@ export function authHeaders(extra = {}) {
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...extra,
   };
-}
-
-export async function parseResponse(response) {
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new Error(data?.message || 'Ocurrió un error en la solicitud.');
-  }
-  return data;
 }
 
 export { API_URL };

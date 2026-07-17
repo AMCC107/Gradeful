@@ -22,15 +22,20 @@ export function getUserProfile() {
   const user = getAuthUser();
   if (!user) return null;
 
-  const isAdmin  = user.role === ROLES.ADMIN;
-  const isPadre  = user.role === ROLES.PADRE;
+  const isAdmin = user.role === ROLES.ADMIN;
+  const isPadre = user.role === ROLES.PADRE;
+  const isTeacher = user.role === ROLES.TEACHER;
 
   let displayId;
-  if (isAdmin)       displayId = user.adminId  ?? user.id ?? '—';
-  else if (isPadre)  displayId = user.parentId ?? user.id ?? '—';
-  else               displayId = user.studentId ?? user.id ?? '—';
+  if (isAdmin) displayId = user.adminId ?? user.id ?? '—';
+  else if (isPadre) displayId = user.parentId ?? user.id ?? '—';
+  else if (isTeacher) displayId = user.teacherId ?? user.id ?? '—';
+  else displayId = user.studentId ?? user.id ?? '—';
 
-  const defaultName = isAdmin ? 'Administrador' : isPadre ? 'Padre/Tutor' : 'Estudiante';
+  let defaultName = 'Estudiante';
+  if (isAdmin) defaultName = 'Administrador';
+  else if (isPadre) defaultName = 'Padre/Tutor';
+  else if (isTeacher) defaultName = 'Profesor';
 
   return {
     name: user.name ?? user.email ?? defaultName,
@@ -79,5 +84,12 @@ export const DEMO_USERS = {
     email: 'roberto.perez@gradeful.edu',
     role: ROLES.ADMIN,
     password: 'admin123',
+  },
+  teacher: {
+    name: 'Prof. Laura Méndez',
+    teacherId: 'DOC-001',
+    email: 'laura.mendez@gradeful.edu',
+    role: ROLES.TEACHER,
+    password: 'profesor123',
   },
 };
