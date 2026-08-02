@@ -15,6 +15,8 @@ import CourseManagement from '../views/admin/CourseManagement';
 import GroupManagement from '../views/admin/GroupManagement';
 import EnrollmentManagement from '../views/admin/EnrollmentManagement';
 import TeacherActivitiesView from '../views/teacher/TeacherActivitiesView';
+import TeacherAttendanceView from '../views/teacher/TeacherAttendanceView';
+import TeacherGradesView from '../views/teacher/TeacherGradesView';
 import StudentPendingActivitiesView from '../views/portal/student/StudentPendingActivitiesView';
 import StudentSummaryView from '../views/portal/student/StudentSummaryView';
 import StudentGradesView from '../views/portal/student/StudentGradesView';
@@ -47,6 +49,8 @@ function AppRouter() {
       <Route path="/profesor" element={<TeacherPortalController />}>
         <Route index element={<Navigate to="actividades" replace />} />
         <Route path="actividades" element={<TeacherActivitiesView />} />
+        <Route path="asistencia" element={<TeacherAttendanceView />} />
+        <Route path="calificaciones" element={<TeacherGradesView />} />
         <Route path="perfil" element={<UserProfile />} />
       </Route>
 
