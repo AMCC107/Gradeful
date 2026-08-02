@@ -16,6 +16,10 @@ import GroupManagement from '../views/admin/GroupManagement';
 import EnrollmentManagement from '../views/admin/EnrollmentManagement';
 import TeacherActivitiesView from '../views/teacher/TeacherActivitiesView';
 import StudentPendingActivitiesView from '../views/portal/student/StudentPendingActivitiesView';
+import StudentSummaryView from '../views/portal/student/StudentSummaryView';
+import StudentGradesView from '../views/portal/student/StudentGradesView';
+import StudentPaymentsView from '../views/portal/student/StudentPaymentsView';
+import StudentInfoView from '../views/portal/student/StudentInfoView';
 import UserProfile from '../views/shared/UserProfile';
 
 function AppRouter() {
@@ -25,11 +29,11 @@ function AppRouter() {
 
       <Route path="/portal" element={<StudentPortalController />}>
         <Route index element={<Navigate to="resumen" replace />} />
-        <Route path="resumen" element={<PortalPlaceholderView />} />
-        <Route path="mi-informacion" element={<UserProfile />} />
+        <Route path="resumen" element={<StudentSummaryView />} />
+        <Route path="mi-informacion" element={<StudentInfoView />} />
         <Route path="actividades" element={<StudentPendingActivitiesView />} />
-        <Route path="calificaciones" element={<PortalPlaceholderView />} />
-        <Route path="pagos" element={<PortalPlaceholderView />} />
+        <Route path="calificaciones" element={<StudentGradesView />} />
+        <Route path="pagos" element={<StudentPaymentsView />} />
         <Route path="tramites" element={<PortalPlaceholderView />} />
       </Route>
 
