@@ -14,6 +14,8 @@ import SubjectManagement from '../views/admin/SubjectManagement';
 import CourseManagement from '../views/admin/CourseManagement';
 import GroupManagement from '../views/admin/GroupManagement';
 import EnrollmentManagement from '../views/admin/EnrollmentManagement';
+import PaymentConceptsView from '../views/admin/PaymentConceptsView';
+import TreasuryView from '../views/admin/TreasuryView';
 import TeacherActivitiesView from '../views/teacher/TeacherActivitiesView';
 import TeacherAttendanceView from '../views/teacher/TeacherAttendanceView';
 import TeacherGradesView from '../views/teacher/TeacherGradesView';
@@ -66,7 +68,8 @@ function AppRouter() {
         <Route path="gestion-usuarios" element={<UserManagement />} />
         <Route path="gestion-roles" element={<RoleManagement />} />
         <Route path="registro-notas" element={<PortalPlaceholderView />} />
-        <Route path="tesoreria" element={<PortalPlaceholderView />} />
+        <Route path="conceptos-pago" element={<PaymentConceptsView />} />
+        <Route path="tesoreria" element={<TreasuryView />} />
         <Route path="tramites" element={<PortalPlaceholderView />} />
         <Route path="perfil" element={<UserProfile />} />
         <Route path="configuracion" element={<PortalPlaceholderView />} />

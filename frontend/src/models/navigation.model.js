@@ -13,6 +13,7 @@ import {
   CreditCard,
   ClipboardList,
   CalendarCheck,
+  Tags,
   Settings,
   LogOut,
 } from 'lucide-react';
@@ -50,6 +51,7 @@ export const ADMIN_NAV_ITEMS = [
   { id: 'gestion-usuarios', label: 'Gestión de Usuarios', path: '/admin/gestion-usuarios', icon: UserCog },
   { id: 'gestion-roles', label: 'Gestión de Roles', path: '/admin/gestion-roles', icon: Shield },
   { id: 'registro-notas', label: 'Registro de Notas', path: '/admin/registro-notas', icon: GraduationCap },
+  { id: 'conceptos-pago', label: 'Conceptos de Pago', path: '/admin/conceptos-pago', icon: Tags },
   { id: 'tesoreria', label: 'Tesorería y Pagos', path: '/admin/tesoreria', icon: CreditCard },
   { id: 'tramites', label: 'Control de Trámites', path: '/admin/tramites', icon: ClipboardList },
   { id: 'perfil', label: 'Mi Perfil', path: '/admin/perfil', icon: UserRound },

@@ -16,6 +16,7 @@ const SEGMENT_LABELS = {
   'gestion-usuarios': 'Gestión de Usuarios',
   'gestion-roles': 'Gestión de Roles',
   'registro-notas': 'Registro de Notas',
+  'conceptos-pago': 'Conceptos de Pago',
   tesoreria: 'Tesorería y Pagos',
   perfil: 'Mi Perfil',
   configuracion: 'Configuración Global',
