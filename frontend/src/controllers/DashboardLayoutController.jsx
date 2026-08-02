@@ -3,7 +3,7 @@ import { useDashboardController } from './hooks/useDashboardController';
 import { usePageTitle } from './hooks/usePageTitle';
 import DashboardLayoutView from '../views/layout/DashboardLayoutView';
 
-function DashboardLayoutController({ user, navItems, panelLabel }) {
+function DashboardLayoutController({ user, navItems, panelLabel, headerExtra = null }) {
   const { mobileMenu, handlers } = useDashboardController();
   const pageTitle = usePageTitle(navItems, panelLabel);
 
@@ -17,6 +17,7 @@ function DashboardLayoutController({ user, navItems, panelLabel }) {
       onMobileMenuOpen={mobileMenu.open}
       onMobileMenuClose={mobileMenu.close}
       onLogout={handlers.onLogout}
+      headerExtra={headerExtra}
     >
       <Outlet />
     </DashboardLayoutView>

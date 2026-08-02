@@ -54,22 +54,23 @@ function UserAvatar({ name }) {
 }
 
 /* ── Top header bar ────────────────────────────────────────────────────── */
-function DashboardHeaderView({ user, pageTitle }) {
+function DashboardHeaderView({ user, pageTitle, headerExtra = null }) {
   return (
-    <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-slate-200/80 bg-white/90 px-6 backdrop-blur-md lg:px-8">
+    <header className="sticky top-0 z-10 flex h-16 items-center justify-between gap-4 border-b border-slate-200/80 bg-white/90 px-6 backdrop-blur-md lg:px-8">
       {/* Page title */}
-      <div className="flex flex-col justify-center">
-        <h1 className="text-base font-semibold text-slate-900 leading-tight">
+      <div className="min-w-0 flex-col justify-center">
+        <h1 className="truncate text-base font-semibold leading-tight text-slate-900">
           {pageTitle}
         </h1>
         <p className="text-xs text-slate-400">Gradeful Academy</p>
       </div>
 
-      {/* User identity */}
-      <div className="flex items-center gap-3">
+      {/* User identity + optional extras (ej. selector de hijos) */}
+      <div className="flex shrink-0 items-center gap-3">
+        {headerExtra}
         {user?.role != null && <RoleChip role={user.role} />}
         <div className="hidden flex-col items-end sm:flex">
-          <span className="text-sm font-medium text-slate-800 leading-tight">
+          <span className="text-sm font-medium leading-tight text-slate-800">
             {user?.name ?? 'Usuario'}
           </span>
           <span className="text-xs text-slate-400">{user?.email ?? ''}</span>
@@ -90,6 +91,7 @@ function DashboardLayoutView({
   onMobileMenuOpen,
   onMobileMenuClose,
   onLogout,
+  headerExtra = null,
   children,
 }) {
   return (
@@ -106,8 +108,8 @@ function DashboardLayoutView({
       />
 
       {/* Right-side shell: header + content */}
-      <div className="flex flex-1 flex-col min-w-0 lg:pl-72">
-        <DashboardHeaderView user={user} pageTitle={pageTitle} />
+      <div className="flex min-w-0 flex-1 flex-col lg:pl-72">
+        <DashboardHeaderView user={user} pageTitle={pageTitle} headerExtra={headerExtra} />
 
         <main
           id="main-content"

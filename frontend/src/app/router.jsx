@@ -24,6 +24,8 @@ import StudentSummaryView from '../views/portal/student/StudentSummaryView';
 import StudentGradesView from '../views/portal/student/StudentGradesView';
 import StudentPaymentsView from '../views/portal/student/StudentPaymentsView';
 import StudentInfoView from '../views/portal/student/StudentInfoView';
+import ParentGradesView from '../views/parent/ParentGradesView';
+import ParentPaymentsView from '../views/parent/ParentPaymentsView';
 import UserProfile from '../views/shared/UserProfile';
 
 function AppRouter() {
@@ -43,8 +45,8 @@ function AppRouter() {
 
       <Route path="/padre" element={<ParentPortalController />}>
         <Route index element={<Navigate to="calificaciones" replace />} />
-        <Route path="calificaciones" element={<PortalPlaceholderView />} />
-        <Route path="pagos" element={<PortalPlaceholderView />} />
+        <Route path="calificaciones" element={<ParentGradesView />} />
+        <Route path="pagos" element={<ParentPaymentsView />} />
         <Route path="perfil" element={<UserProfile />} />
       </Route>
 
