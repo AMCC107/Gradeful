@@ -9,67 +9,43 @@ import {
 } from 'lucide-react';
 import { FileUpload } from '../../../components/ui';
 import { AdminPageHero, FeedbackBanner } from '../../admin/shared/AdminUi';
+import { PAYMENTS_BY_STUDENT } from '../../../contexts/ParentStudentContext';
 
-const ACCOUNT_SUMMARY = {
-  currentBalance: 300,
-  overdueCount: 1,
-  upcomingCount: 1,
-};
-
-const PENDING_CHARGES = [
-  {
-    id: 1,
-    concept: 'Colegiatura Agosto 2026',
-    amount: 150,
-    due: '15/08/2026',
-    status: 'vencido',
-  },
-  {
-    id: 2,
-    concept: 'Colegiatura Septiembre 2026',
-    amount: 150,
-    due: '15/09/2026',
-    status: 'proximo',
-  },
-];
-
-const PAYMENT_HISTORY = [
-  {
-    id: 1,
-    concept: 'Colegiatura Julio 2026',
-    amount: 150,
-    date: '12/07/2026',
-    method: 'Transferencia SPEI',
-    status: 'Pagado',
-  },
-  {
-    id: 2,
-    concept: 'Colegiatura Junio 2026',
-    amount: 150,
-    date: '10/06/2026',
-    method: 'Tarjeta Débito',
-    status: 'Pagado',
-  },
-  {
-    id: 3,
-    concept: 'Inscripción Feb-Jul 2026',
-    amount: 300,
-    date: '28/01/2026',
-    method: 'Transferencia SPEI',
-    status: 'Pagado',
-  },
-];
+const DEFAULT_PAYMENTS = PAYMENTS_BY_STUDENT['child-2'];
 
 function formatCurrency(amount) {
   return `$${Number(amount).toFixed(2)} USD`;
 }
 
-function StudentPaymentsView() {
+/**
+ * Estado de cuenta (estudiante o padre en modo lectura).
+ *
+ * @param {object} props
+ * @param {string} [props.studentId]
+ * @param {object} [props.accountSummary]
+ * @param {Array} [props.pendingCharges]
+ * @param {Array} [props.paymentHistory]
+ * @param {string} [props.eyebrow]
+ * @param {boolean} [props.readOnly] - Oculta "Reportar transferencia"
+ */
+function StudentPaymentsView({
+  studentId,
+  accountSummary,
+  pendingCharges,
+  paymentHistory,
+  eyebrow = 'Portal estudiantil',
+  readOnly = false,
+}) {
+  const dataset = studentId ? PAYMENTS_BY_STUDENT[studentId] : null;
+  const summary = accountSummary ?? dataset?.accountSummary ?? DEFAULT_PAYMENTS.accountSummary;
+  const charges = pendingCharges ?? dataset?.pendingCharges ?? DEFAULT_PAYMENTS.pendingCharges;
+  const history = paymentHistory ?? dataset?.paymentHistory ?? DEFAULT_PAYMENTS.paymentHistory;
+
   const [receiptFile, setReceiptFile] = useState(null);
   const [feedback, setFeedback] = useState({ error: '', success: '' });
 
-  const overdueCharges = PENDING_CHARGES.filter((item) => item.status === 'vencido');
-  const upcomingCharges = PENDING_CHARGES.filter((item) => item.status === 'proximo');
+  const overdueCharges = charges.filter((item) => item.status === 'vencido');
+  const upcomingCharges = charges.filter((item) => item.status === 'proximo');
 
   const handleReportTransfer = (event) => {
     event.preventDefault();
@@ -86,16 +62,22 @@ function StudentPaymentsView() {
   return (
     <div className="flex flex-col gap-6">
       <AdminPageHero
-        eyebrow="Portal estudiantil"
+        eyebrow={eyebrow}
         title="Estado de Cuenta"
-        description="Consulta saldo, cargos pendientes e historial de pagos. Reporta transferencias con tu comprobante."
+        description={
+          readOnly
+            ? 'Consulta saldo, cargos pendientes e historial de pagos del alumno seleccionado.'
+            : 'Consulta saldo, cargos pendientes e historial de pagos. Reporta transferencias con tu comprobante.'
+        }
       />
 
-      <FeedbackBanner
-        error={feedback.error}
-        success={feedback.success}
-        onDismiss={() => setFeedback({ error: '', success: '' })}
-      />
+      {!readOnly && (
+        <FeedbackBanner
+          error={feedback.error}
+          success={feedback.success}
+          onDismiss={() => setFeedback({ error: '', success: '' })}
+        />
+      )}
 
       <div className="grid gap-4 sm:grid-cols-3">
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -103,7 +85,7 @@ function StudentPaymentsView() {
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Saldo actual</p>
               <h3 className="mt-1 text-2xl font-bold tabular-nums text-amber-600">
-                {formatCurrency(ACCOUNT_SUMMARY.currentBalance)}
+                {formatCurrency(summary.currentBalance)}
               </h3>
             </div>
             <div className="flex size-11 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
@@ -117,7 +99,7 @@ function StudentPaymentsView() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-red-600">Pagos vencidos</p>
-              <h3 className="mt-1 text-2xl font-bold text-red-700">{ACCOUNT_SUMMARY.overdueCount}</h3>
+              <h3 className="mt-1 text-2xl font-bold text-red-700">{summary.overdueCount}</h3>
             </div>
             <div className="flex size-11 items-center justify-center rounded-xl bg-red-100 text-red-600">
               <AlertCircle className="size-5" />
@@ -132,7 +114,7 @@ function StudentPaymentsView() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-amber-700">Próximos a vencer</p>
-              <h3 className="mt-1 text-2xl font-bold text-amber-800">{ACCOUNT_SUMMARY.upcomingCount}</h3>
+              <h3 className="mt-1 text-2xl font-bold text-amber-800">{summary.upcomingCount}</h3>
             </div>
             <div className="flex size-11 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
               <Clock className="size-5" />
@@ -160,7 +142,14 @@ function StudentPaymentsView() {
               </tr>
             </thead>
             <tbody>
-              {PENDING_CHARGES.map((charge) => {
+              {charges.length === 0 && (
+                <tr>
+                  <td colSpan={4} className="px-5 py-8 text-center text-slate-500">
+                    Sin cargos pendientes.
+                  </td>
+                </tr>
+              )}
+              {charges.map((charge) => {
                 const isOverdue = charge.status === 'vencido';
                 return (
                   <tr
@@ -184,9 +173,7 @@ function StudentPaymentsView() {
                     <td className="px-5 py-3.5 text-center">
                       <span
                         className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-bold ${
-                          isOverdue
-                            ? 'bg-red-100 text-red-700'
-                            : 'bg-amber-100 text-amber-800'
+                          isOverdue ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-800'
                         }`}
                       >
                         {isOverdue ? 'Vencido' : 'Próximo a vencer'}
@@ -204,7 +191,7 @@ function StudentPaymentsView() {
         <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/80 px-5 py-4">
           <div>
             <h3 className="text-sm font-semibold text-slate-900">Historial de pagos recientes</h3>
-            <p className="text-xs text-slate-500">Movimientos ya conciliados en tu cuenta.</p>
+            <p className="text-xs text-slate-500">Movimientos ya conciliados en la cuenta.</p>
           </div>
           <CheckCircle2 className="size-5 text-emerald-500" />
         </div>
@@ -220,7 +207,7 @@ function StudentPaymentsView() {
               </tr>
             </thead>
             <tbody>
-              {PAYMENT_HISTORY.map((payment) => (
+              {history.map((payment) => (
                 <tr key={payment.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60">
                   <td className="px-5 py-3.5 font-medium text-slate-900">{payment.concept}</td>
                   <td className="px-5 py-3.5 font-mono font-semibold text-emerald-700">
@@ -240,35 +227,37 @@ function StudentPaymentsView() {
         </div>
       </div>
 
-      <form
-        onSubmit={handleReportTransfer}
-        className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6"
-      >
-        <div className="mb-4">
-          <h3 className="text-sm font-semibold text-slate-900">Reportar transferencia</h3>
-          <p className="mt-0.5 text-xs text-slate-500">
-            Sube tu comprobante bancario (PDF o JPG) para que tesorería valide el pago.
-          </p>
-        </div>
+      {!readOnly && (
+        <form
+          onSubmit={handleReportTransfer}
+          className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6"
+        >
+          <div className="mb-4">
+            <h3 className="text-sm font-semibold text-slate-900">Reportar transferencia</h3>
+            <p className="mt-0.5 text-xs text-slate-500">
+              Sube tu comprobante bancario (PDF o JPG) para que tesorería valide el pago.
+            </p>
+          </div>
 
-        <FileUpload
-          accept="image/jpeg,image/png,image/jpg,application/pdf,.pdf,.jpg,.jpeg,.png"
-          maxSize={5 * 1024 * 1024}
-          label="Comprobante de pago"
-          hint="PDF o imagen · máx. 5 MB"
-          onFileSelect={setReceiptFile}
-        />
+          <FileUpload
+            accept="image/jpeg,image/png,image/jpg,application/pdf,.pdf,.jpg,.jpeg,.png"
+            maxSize={5 * 1024 * 1024}
+            label="Comprobante de pago"
+            hint="PDF o imagen · máx. 5 MB"
+            onFileSelect={setReceiptFile}
+          />
 
-        <div className="mt-4 flex justify-end">
-          <button
-            type="submit"
-            className="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-700"
-          >
-            <Send className="size-4" />
-            Enviar comprobante
-          </button>
-        </div>
-      </form>
+          <div className="mt-4 flex justify-end">
+            <button
+              type="submit"
+              className="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-700"
+            >
+              <Send className="size-4" />
+              Enviar comprobante
+            </button>
+          </div>
+        </form>
+      )}
     </div>
   );
 }
