@@ -1,4 +1,4 @@
-import { Pencil, UserMinus, UserPlus, RefreshCw, Search, X } from 'lucide-react';
+import { Eye, Pencil, UserMinus, UserPlus, RefreshCw, Search, X } from 'lucide-react';
 import { useStudentManagement } from '../../controllers/hooks/useStudentManagement';
 import {
   AdminPageHero,
@@ -7,8 +7,10 @@ import {
   inputClass,
   inputErrorClass,
 } from './shared/AdminUi';
+import StudentEnrollmentWizard from './StudentEnrollmentWizard';
+import StudentProfile360 from './StudentProfile360';
 
-function StudentFormModal({
+function StudentEditModal({
   open,
   editing,
   form,
@@ -20,7 +22,6 @@ function StudentFormModal({
   onSubmit,
 }) {
   if (!open) return null;
-  const isEdit = Boolean(editing);
 
   return (
     <div
@@ -35,11 +36,9 @@ function StudentFormModal({
       >
         <div className="mb-5 flex items-start justify-between gap-3">
           <div>
-            <h2 className="text-lg font-semibold text-slate-900">
-              {isEdit ? 'Editar alumno' : 'Nuevo alumno'}
-            </h2>
+            <h2 className="text-lg font-semibold text-slate-900">Editar alumno</h2>
             <p className="mt-0.5 text-sm text-slate-500">
-              Asocia un usuario con rol Estudiante y asígnale matrícula.
+              Actualiza la vinculación de usuario y matrícula.
             </p>
           </div>
           <button
@@ -102,7 +101,7 @@ function StudentFormModal({
               disabled={saving}
               className="rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-50"
             >
-              {saving ? 'Guardando…' : isEdit ? 'Guardar cambios' : 'Crear alumno'}
+              {saving ? 'Guardando…' : 'Guardar cambios'}
             </button>
           </div>
         </form>
@@ -119,11 +118,17 @@ function StudentManagement() {
     saving,
     error,
     success,
-    isModalOpen,
-    editing,
+    isWizardOpen,
+    wizardStep,
     form,
     fieldErrors,
     filters,
+    isEditModalOpen,
+    editing,
+    editForm,
+    viewingStudent,
+    profileTab,
+    viewingProfile,
     handlers,
   } = useStudentManagement();
 
@@ -134,7 +139,7 @@ function StudentManagement() {
       <AdminPageHero
         eyebrow="Académico"
         title="Gestión de Alumnos"
-        description="Vincula usuarios estudiantes con su matrícula institucional."
+        description="Inscribe alumnos con expediente completo (wizard) y consulta su perfil 360."
       />
 
       <FeedbackBanner
@@ -236,7 +241,11 @@ function StudentManagement() {
               )}
               {!loading &&
                 students.map((student) => (
-                  <tr key={student.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60">
+                  <tr
+                    key={student.id}
+                    className="cursor-pointer border-b border-slate-50 last:border-0 hover:bg-slate-50/60"
+                    onClick={() => handlers.onOpenProfile(student)}
+                  >
                     <td className="px-5 py-3.5 font-mono text-xs text-slate-500">{student.id}</td>
                     <td className="px-5 py-3.5 font-medium text-slate-900">{student.matricula}</td>
                     <td className="px-5 py-3.5 text-slate-700">{student.nombre}</td>
@@ -253,8 +262,16 @@ function StudentManagement() {
                         {student.is_active ? 'Activo' : 'Inactivo'}
                       </span>
                     </td>
-                    <td className="px-5 py-3.5">
+                    <td className="px-5 py-3.5" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => handlers.onOpenProfile(student)}
+                          className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                        >
+                          <Eye className="size-3.5" />
+                          Ver
+                        </button>
                         <button
                           type="button"
                           onClick={() => handlers.onOpenEdit(student)}
@@ -281,16 +298,39 @@ function StudentManagement() {
         </div>
       </div>
 
-      <StudentFormModal
-        open={isModalOpen}
-        editing={editing}
+      <StudentEnrollmentWizard
+        open={isWizardOpen}
+        step={wizardStep}
         form={form}
         fieldErrors={fieldErrors}
         eligibleUsers={eligibleUsers}
         saving={saving}
-        onClose={handlers.onCloseModal}
+        onClose={handlers.onCloseWizard}
         onChange={handlers.onFormChange}
-        onSubmit={handlers.onSubmit}
+        onNext={handlers.onNextStep}
+        onBack={handlers.onBackStep}
+        onFinish={handlers.onFinishWizard}
+      />
+
+      <StudentEditModal
+        open={isEditModalOpen}
+        editing={editing}
+        form={editForm}
+        fieldErrors={fieldErrors}
+        eligibleUsers={eligibleUsers}
+        saving={saving}
+        onClose={handlers.onCloseEditModal}
+        onChange={handlers.onEditFormChange}
+        onSubmit={handlers.onEditSubmit}
+      />
+
+      <StudentProfile360
+        open={Boolean(viewingStudent)}
+        student={viewingStudent}
+        profile={viewingProfile}
+        activeTab={profileTab}
+        onTabChange={handlers.onProfileTabChange}
+        onClose={handlers.onCloseProfile}
       />
     </div>
   );

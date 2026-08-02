@@ -20,6 +20,7 @@ function isImageFile(file) {
  * @param {string} [props.accept] - Tipos MIME o extensiones (ej. "image/*,.pdf")
  * @param {number} [props.maxSize] - Tamaño máximo en bytes
  * @param {(file: File | null) => void} [props.onFileSelect] - Callback al seleccionar o limpiar
+ * @param {File | null} [props.value] - Modo controlado: archivo actual desde el padre
  * @param {string} [props.label]
  * @param {string} [props.hint]
  * @param {boolean} [props.disabled]
@@ -29,6 +30,7 @@ function FileUpload({
   accept = 'image/*,.pdf,.doc,.docx',
   maxSize = 5 * 1024 * 1024,
   onFileSelect,
+  value,
   label = 'Subir archivo',
   hint,
   disabled = false,
@@ -36,11 +38,18 @@ function FileUpload({
 }) {
   const inputId = useId();
   const inputRef = useRef(null);
-  const [file, setFile] = useState(null);
+  const [internalFile, setInternalFile] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState('');
 
+  const isControlled = value !== undefined;
+  const file = isControlled ? value : internalFile;
+
   const defaultHint = hint ?? `Máximo ${formatBytes(maxSize)}. Arrastra o haz clic para seleccionar.`;
+
+  const setFile = (next) => {
+    if (!isControlled) setInternalFile(next);
+  };
 
   const clearFile = () => {
     setFile(null);
