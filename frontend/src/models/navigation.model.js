@@ -12,6 +12,7 @@ import {
   GraduationCap,
   CreditCard,
   ClipboardList,
+  CalendarCheck,
   Settings,
   LogOut,
 } from 'lucide-react';
@@ -33,6 +34,8 @@ export const STUDENT_NAV_ITEMS = [
 
 export const TEACHER_NAV_ITEMS = [
   { id: 'actividades', label: 'Actividades y Tareas', path: '/profesor/actividades', icon: ClipboardList, end: true },
+  { id: 'asistencia', label: 'Asistencia', path: '/profesor/asistencia', icon: CalendarCheck },
+  { id: 'calificaciones', label: 'Calificaciones', path: '/profesor/calificaciones', icon: GraduationCap },
   { id: 'perfil', label: 'Mi Perfil', path: '/profesor/perfil', icon: UserRound },
 ];
 
