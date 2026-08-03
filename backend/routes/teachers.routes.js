@@ -6,8 +6,12 @@ const {
   updateTeacher,
   deactivateTeacher,
 } = require('../controllers/teachers.controller');
+const { authenticate, authorizeRoles } = require('../middleware/auth.middleware');
+const { ROLE_ADMIN } = require('../utils/access');
 
 const router = express.Router();
+router.use(authenticate);
+router.use(authorizeRoles(ROLE_ADMIN));
 
 router.get('/', listTeachers);
 router.post('/', createTeacher);

@@ -1,13 +1,10 @@
+import { useEffect, useState } from 'react';
 import { GraduationCap } from 'lucide-react';
 import { AdminPageHero } from '../../admin/shared/AdminUi';
 import { ExportButtons } from '../../../components/ui';
 import BoletaPDF from '../../shared/BoletaPDF';
-import { GRADES_BY_STUDENT, MOCK_CHILDREN } from '../../../contexts/ParentStudentContext';
-import { getUserProfile } from '../../../models/auth.model';
-
-const DEFAULT_GRADES = GRADES_BY_STUDENT['child-2'];
-const DEFAULT_PROGRAM = MOCK_CHILDREN.find((child) => child.id === 'child-2')?.program
-  ?? '6to Semestre · Ingeniería en Desarrollo de Software';
+import { getAuthUser, getUserProfile } from '../../../models/auth.model';
+import { downloadReportCard, fetchStudentGrades } from '../../../services/grades.service';
 
 function formatGrade(value) {
   return value != null ? Number(value).toFixed(1) : '—';
@@ -26,34 +23,58 @@ function StudentGradesView({
   readOnly = false,
 }) {
   const user = getUserProfile();
+  const authUser = getAuthUser();
+  const resolvedStudentId = studentId ?? authUser?.studentRecordId;
+  const [report, setReport] = useState(null);
+  const [loading, setLoading] = useState(Boolean(resolvedStudentId && !grades));
+  const [error, setError] = useState('');
 
-  const resolvedGrades = grades
-    ?? (studentId ? GRADES_BY_STUDENT[studentId] : null)
-    ?? DEFAULT_GRADES;
+  useEffect(() => {
+    if (!resolvedStudentId || grades) return;
+    let active = true;
+    fetchStudentGrades(resolvedStudentId)
+      .then((data) => {
+        if (active) {
+          setReport(data);
+          setError('');
+        }
+      })
+      .catch((requestError) => {
+        if (active) setError(requestError?.message || 'No se pudo cargar la boleta.');
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => { active = false; };
+  }, [resolvedStudentId, grades]);
+
+  const resolvedGrades = grades ?? report?.grades ?? [];
 
   const resolvedProgram = programLabel
-    ?? MOCK_CHILDREN.find((child) => child.id === studentId)?.program
-    ?? DEFAULT_PROGRAM;
+    ?? report?.program
+    ?? '';
 
   const resolvedName = studentName
+    ?? report?.student?.nombre
     ?? user?.name
     ?? 'Estudiante';
 
   const resolvedMatricula = matricula
-    ?? MOCK_CHILDREN.find((child) => child.id === studentId)?.matricula
+    ?? report?.student?.matricula
     ?? user?.displayId
     ?? '—';
 
-  const cycleAverage = resolvedGrades.length
+  const cycleAverage = report?.average ?? (resolvedGrades.length
     ? (resolvedGrades.reduce((sum, row) => sum + row.final, 0) / resolvedGrades.length).toFixed(1)
-    : '—';
+    : '—');
 
-  const handleExportPDF = () => {
-    document.body.classList.add('printing-boleta');
-    window.print();
-    window.setTimeout(() => {
-      document.body.classList.remove('printing-boleta');
-    }, 500);
+  const handleExportPDF = async () => {
+    if (!resolvedStudentId) return;
+    try {
+      await downloadReportCard(resolvedStudentId);
+    } catch (requestError) {
+      setError(requestError?.message || 'No se pudo generar la boleta PDF.');
+    }
   };
 
   return (
@@ -69,6 +90,9 @@ function StudentGradesView({
           }
         />
 
+        {loading && <p className="text-sm text-slate-500">Cargando boleta…</p>}
+        {error && <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
+
         <div className="flex justify-end">
           <ExportButtons onExportPDF={handleExportPDF} />
         </div>
@@ -81,7 +105,7 @@ function StudentGradesView({
               </div>
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                  Ciclo Primavera 2026
+                  Ciclo {report?.cycle?.nombre || 'actual'}
                 </p>
                 <h3 className="text-base font-bold text-slate-900">Boleta oficial del periodo</h3>
                 <p className="mt-0.5 text-sm text-slate-500">{resolvedProgram}</p>

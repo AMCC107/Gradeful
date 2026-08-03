@@ -5,6 +5,7 @@ function mapSubject(row) {
   if (!row) return null;
   return {
     id: row.id,
+    clave: row.clave,
     nombre: row.nombre,
     descripcion: row.descripcion,
   };
@@ -23,14 +24,14 @@ async function listSubjects(req, res) {
 
     if (search && String(search).trim()) {
       const term = `%${String(search).trim()}%`;
-      conditions.push('(nombre LIKE ? OR descripcion LIKE ?)');
-      params.push(term, term);
+      conditions.push('(clave LIKE ? OR nombre LIKE ? OR descripcion LIKE ?)');
+      params.push(term, term, term);
     }
 
     const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
     const db = await getDb();
     const rows = await db.all(
-      `SELECT id, nombre, descripcion FROM subjects ${whereClause} ORDER BY nombre ASC`,
+      `SELECT id, clave, nombre, descripcion FROM subjects ${whereClause} ORDER BY nombre ASC`,
       params
     );
 
@@ -49,7 +50,7 @@ async function createSubject(req, res) {
       return validationError(res, validation.errors);
     }
 
-    const { nombre, descripcion } = validation.values;
+    const { clave, nombre, descripcion } = validation.values;
     const db = await getDb();
 
     const existing = await db.get('SELECT id FROM subjects WHERE nombre = ?', [nombre]);
@@ -60,11 +61,11 @@ async function createSubject(req, res) {
     }
 
     const result = await db.run(
-      `INSERT INTO subjects (nombre, descripcion) VALUES (?, ?)`,
-      [nombre, descripcion]
+      `INSERT INTO subjects (clave, nombre, descripcion) VALUES (?, ?, ?)`,
+      [clave, nombre, descripcion]
     );
 
-    const row = await db.get('SELECT id, nombre, descripcion FROM subjects WHERE id = ?', [
+    const row = await db.get('SELECT id, clave, nombre, descripcion FROM subjects WHERE id = ?', [
       result.lastID,
     ]);
 
@@ -93,7 +94,7 @@ async function updateSubject(req, res) {
       return res.status(404).json({ message: 'Materia no encontrada.' });
     }
 
-    const { nombre, descripcion } = validation.values;
+    const { clave, nombre, descripcion } = validation.values;
     const duplicate = await db.get(
       'SELECT id FROM subjects WHERE nombre = ? AND id != ?',
       [nombre, id]
@@ -104,13 +105,14 @@ async function updateSubject(req, res) {
       });
     }
 
-    await db.run(`UPDATE subjects SET nombre = ?, descripcion = ? WHERE id = ?`, [
+    await db.run(`UPDATE subjects SET clave = ?, nombre = ?, descripcion = ? WHERE id = ?`, [
+      clave,
       nombre,
       descripcion,
       id,
     ]);
 
-    const row = await db.get('SELECT id, nombre, descripcion FROM subjects WHERE id = ?', [
+    const row = await db.get('SELECT id, clave, nombre, descripcion FROM subjects WHERE id = ?', [
       id,
     ]);
 

@@ -13,6 +13,8 @@ function mapAuthUser(row) {
     parentId: row.role_id === 2 ? `PAD-${String(row.id).padStart(4, '0')}` : undefined,
     studentId: row.role_id === 3 ? `EST-${String(row.id).padStart(4, '0')}` : undefined,
     teacherId: row.role_id === 4 ? `DOC-${String(row.id).padStart(3, '0')}` : undefined,
+    studentRecordId: row.student_record_id ?? undefined,
+    teacherRecordId: row.teacher_record_id ?? undefined,
   };
 }
 
@@ -29,9 +31,12 @@ async function login(req, res) {
 
     const db = await getDb();
     const user = await db.get(
-      `SELECT u.*, r.nombre AS role_nombre
+      `SELECT u.*, r.nombre AS role_nombre,
+              s.id AS student_record_id, t.id AS teacher_record_id
        FROM users u
        LEFT JOIN roles r ON r.id = u.role_id
+       LEFT JOIN students s ON s.user_id = u.id
+       LEFT JOIN teachers t ON t.user_id = u.id
        WHERE u.correo = ?`,
       [loginEmail]
     );
