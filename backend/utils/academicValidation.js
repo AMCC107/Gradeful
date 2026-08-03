@@ -71,6 +71,7 @@ function validateTeacherPayload(body, { isUpdate = false } = {}) {
 
 function validateSubjectPayload(body) {
   const errors = {};
+  const clave = typeof body.clave === 'string' ? body.clave.trim().toUpperCase() : '';
   const nombre = typeof body.nombre === 'string' ? body.nombre.trim() : '';
   const descripcion =
     typeof body.descripcion === 'string' ? body.descripcion.trim() : '';
@@ -82,6 +83,7 @@ function validateSubjectPayload(body) {
   }
 
   return validationResult(errors, {
+    clave: clave || null,
     nombre,
     descripcion: descripcion || null,
   });
@@ -110,6 +112,15 @@ function validateGroupPayload(body) {
   const courseId = parsePositiveId(body.course_id, 'course_id', errors, 'El curso');
   const subjectId = parsePositiveId(body.subject_id, 'subject_id', errors, 'La materia');
   const teacherId = parsePositiveId(body.teacher_id, 'teacher_id', errors, 'El profesor');
+  const schoolCycleId = body.school_cycle_id
+    ? parsePositiveId(body.school_cycle_id, 'school_cycle_id', errors, 'El ciclo escolar')
+    : null;
+  const nombre = String(body.nombre || 'A').trim();
+  const turno = String(body.turno || 'matutino').trim().toLowerCase();
+  if (!nombre) errors.nombre = 'El nombre del grupo es obligatorio.';
+  if (!['matutino', 'vespertino', 'nocturno', 'mixto'].includes(turno)) {
+    errors.turno = 'El turno no es válido.';
+  }
 
   let capacidad = null;
   if (body.capacidad_maxima === undefined || body.capacidad_maxima === null || body.capacidad_maxima === '') {
@@ -125,6 +136,9 @@ function validateGroupPayload(body) {
     course_id: courseId,
     subject_id: subjectId,
     teacher_id: teacherId,
+    school_cycle_id: schoolCycleId,
+    nombre,
+    turno,
     capacidad_maxima: capacidad,
   });
 }

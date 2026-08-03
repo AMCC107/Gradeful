@@ -3,6 +3,7 @@ node_modules/
 
 # Base de datos SQLite (local, no versionar)
 data/
+uploads/
 *.db
 *.db-journal
 *.db-wal

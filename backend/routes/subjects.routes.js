@@ -5,12 +5,15 @@ const {
   updateSubject,
   deleteSubject,
 } = require('../controllers/subjects.controller');
+const { authenticate, authorizeRoles } = require('../middleware/auth.middleware');
+const { ROLE_ADMIN } = require('../utils/access');
 
 const router = express.Router();
+router.use(authenticate);
 
 router.get('/', listSubjects);
-router.post('/', createSubject);
-router.put('/:id', updateSubject);
-router.delete('/:id', deleteSubject);
+router.post('/', authorizeRoles(ROLE_ADMIN), createSubject);
+router.put('/:id', authorizeRoles(ROLE_ADMIN), updateSubject);
+router.delete('/:id', authorizeRoles(ROLE_ADMIN), deleteSubject);
 
 module.exports = router;

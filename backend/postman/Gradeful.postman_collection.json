@@ -1,0 +1,173 @@
+{
+  "info": {
+    "_postman_id": "9a9622af-f82a-4bd4-938a-34e55b2ef196",
+    "name": "Gradeful API - Functional verification",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" },
+    { "key": "attendanceDate", "value": "2026-08-03" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/health" },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('API and database are healthy', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().database).to.eql('ready'); });"] } }]
+    },
+    {
+      "name": "Login admin",
+      "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"email\":\"roberto.perez@gradeful.edu\",\"password\":\"admin123\"}" }, "url": "{{baseUrl}}/api/auth/login" },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('Admin authenticates', () => pm.response.to.have.status(200));", "pm.collectionVariables.set('adminToken', pm.response.json().token);"] } }]
+    },
+    {
+      "name": "School cycles and periods",
+      "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }], "url": "{{baseUrl}}/api/school-cycles" },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('Cycles are persisted', () => pm.response.to.have.status(200));", "const cycle = pm.response.json().cycles[0]; pm.expect(cycle.periods.length).to.be.above(0); pm.collectionVariables.set('cycleId', cycle.id); pm.collectionVariables.set('periodId', cycle.periods[0].id);"] } }]
+    },
+    {
+      "name": "Create grade/course",
+      "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }, { "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"nombre\":\"Sexto\",\"nivel\":\"Primaria\"}" }, "url": "{{baseUrl}}/api/courses" },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('Course created', () => pm.response.to.have.status(201));", "pm.collectionVariables.set('courseId', pm.response.json().course.id);"] } }]
+    },
+    {
+      "name": "Create subject",
+      "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }, { "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"nombre\":\"Matemáticas Postman\",\"descripcion\":\"Materia de verificación\"}" }, "url": "{{baseUrl}}/api/subjects" },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('Subject created', () => pm.response.to.have.status(201));", "pm.collectionVariables.set('subjectId', pm.response.json().subject.id);"] } }]
+    },
+    {
+      "name": "Resolve demo teacher",
+      "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }], "url": "{{baseUrl}}/api/teachers" },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('Teacher stored in database', () => pm.response.to.have.status(200));", "pm.collectionVariables.set('teacherId', pm.response.json().teachers[0].id);"] } }]
+    },
+    {
+      "name": "Resolve demo student",
+      "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }], "url": "{{baseUrl}}/api/students" },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('Student stored in database', () => pm.response.to.have.status(200));", "pm.collectionVariables.set('studentId', pm.response.json().students[0].id);"] } }]
+    },
+    {
+      "name": "Create group with shift and cycle",
+      "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }, { "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"course_id\":{{courseId}},\"subject_id\":{{subjectId}},\"teacher_id\":{{teacherId}},\"school_cycle_id\":{{cycleId}},\"nombre\":\"A\",\"turno\":\"matutino\",\"capacidad_maxima\":30}" }, "url": "{{baseUrl}}/api/groups" },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('Group created', () => pm.response.to.have.status(201));", "pm.collectionVariables.set('groupId', pm.response.json().group.id);"] } }]
+    },
+    {
+      "name": "Enroll student",
+      "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }, { "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"group_id\":{{groupId}},\"student_id\":{{studentId}}}" }, "url": "{{baseUrl}}/api/enrollments" },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('Enrollment persisted', () => pm.response.to.have.status(201));"] } }]
+    },
+    {
+      "name": "Save grade",
+      "request": { "method": "PUT", "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }, { "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"school_cycle_id\":{{cycleId}},\"grades\":[{\"student_id\":{{studentId}},\"period_id\":{{periodId}},\"calificacion\":9.4}]}" }, "url": "{{baseUrl}}/api/grades/group/{{groupId}}" },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('Grade persisted', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().saved).to.eql(1); });"] } }]
+    },
+    {
+      "name": "Save absence",
+      "request": { "method": "PUT", "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }, { "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"fecha\":\"{{attendanceDate}}\",\"records\":[{\"student_id\":{{studentId}},\"estado\":\"ausente\"}]}" }, "url": "{{baseUrl}}/api/attendance/group/{{groupId}}" },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('Attendance persisted', () => pm.response.to.have.status(200));"] } }]
+    },
+    {
+      "name": "Resolve attendance record",
+      "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }], "url": "{{baseUrl}}/api/attendance?group_id={{groupId}}&fecha={{attendanceDate}}" },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('Absence can be read', () => pm.response.to.have.status(200));", "const record = pm.response.json().rows[0].attendance[pm.collectionVariables.get('attendanceDate')]; pm.expect(record.estado).to.eql('ausente'); pm.collectionVariables.set('attendanceId', record.id);"] } }]
+    },
+    {
+      "name": "Resolve payment concept",
+      "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }], "url": "{{baseUrl}}/api/payments/concepts" },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('Payment concepts are persisted', () => pm.response.to.have.status(200));", "pm.collectionVariables.set('conceptId', pm.response.json().concepts[0].id);"] } }]
+    },
+    {
+      "name": "Create charge",
+      "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }, { "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"student_id\":{{studentId}},\"concept_id\":{{conceptId}},\"school_cycle_id\":{{cycleId}},\"monto\":1500,\"fecha_vencimiento\":\"2026-08-01\"}" }, "url": "{{baseUrl}}/api/payments/charges" },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('Charge persisted', () => pm.response.to.have.status(201));", "pm.collectionVariables.set('chargeId', pm.response.json().charge_id);"] } }]
+    },
+    {
+      "name": "Register partial payment",
+      "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }, { "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"student_id\":{{studentId}},\"charge_id\":{{chargeId}},\"monto\":500,\"metodo\":\"transferencia\",\"referencia\":\"POSTMAN-001\"}" }, "url": "{{baseUrl}}/api/payments" },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('Payment persisted', () => pm.response.to.have.status(201));"] } }]
+    },
+    {
+      "name": "Student account",
+      "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }], "url": "{{baseUrl}}/api/payments/accounts/{{studentId}}" },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('Account derives paid and overdue balance', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().accountSummary.currentBalance).to.eql(1000); });"] } }]
+    },
+    {
+      "name": "Debtors report",
+      "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }], "url": "{{baseUrl}}/api/reports/debtors" },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('Debtors report uses account tables', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().rows.length).to.be.above(0); });"] } }]
+    },
+    {
+      "name": "Report card PDF",
+      "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }], "url": "{{baseUrl}}/api/reports/report-card/{{studentId}}.pdf" },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('Report card is a real PDF response', () => { pm.response.to.have.status(200); pm.expect(pm.response.headers.get('Content-Type')).to.contain('application/pdf'); });"] } }]
+    },
+    {
+      "name": "Import students from Excel",
+      "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }], "body": { "mode": "formdata", "formdata": [{ "key": "file", "type": "file", "src": "fixtures/alumnos.xlsx" }] }, "url": "{{baseUrl}}/api/students/import" },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('Excel import creates database records', () => { pm.response.to.have.status(201); pm.expect(pm.response.json().summary.created).to.eql(1); });"] } }]
+    },
+    {
+      "name": "Export students to Excel",
+      "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }], "url": "{{baseUrl}}/api/students/export.xlsx" },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('Excel export returns workbook', () => { pm.response.to.have.status(200); pm.expect(pm.response.headers.get('Content-Type')).to.contain('spreadsheetml'); });"] } }]
+    },
+    {
+      "name": "Login student",
+      "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"email\":\"maria@gradeful.edu\",\"password\":\"estudiante123\"}" }, "url": "{{baseUrl}}/api/auth/login" },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('Student authenticates', () => pm.response.to.have.status(200));", "pm.collectionVariables.set('studentToken', pm.response.json().token); pm.expect(pm.response.json().user.studentRecordId).to.eql(Number(pm.collectionVariables.get('studentId')));"] } }]
+    },
+    {
+      "name": "Student reads own grades",
+      "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{studentToken}}" }], "url": "{{baseUrl}}/api/grades/student/{{studentId}}" },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('Student can read own grade', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().grades[0].p1).to.eql(9.4); });"] } }]
+    },
+    {
+      "name": "Student cannot list all students",
+      "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{studentToken}}" }], "url": "{{baseUrl}}/api/students" },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('Role segmentation blocks student administration', () => pm.response.to.have.status(403));"] } }]
+    },
+    {
+      "name": "Student submits absence justification",
+      "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{studentToken}}" }], "body": { "mode": "formdata", "formdata": [{ "key": "motivo", "value": "Consulta médica", "type": "text" }, { "key": "document", "type": "file", "src": "fixtures/justification.pdf" }] }, "url": "{{baseUrl}}/api/attendance/{{attendanceId}}/justification" },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('Justification document is stored', () => pm.response.to.have.status(201));"] } }]
+    },
+    {
+      "name": "Student submits payment proof",
+      "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{studentToken}}" }], "body": { "mode": "formdata", "formdata": [{ "key": "student_id", "value": "{{studentId}}", "type": "text" }, { "key": "charge_id", "value": "{{chargeId}}", "type": "text" }, { "key": "document", "type": "file", "src": "fixtures/justification.pdf" }] }, "url": "{{baseUrl}}/api/payments/proofs" },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('Payment proof is stored for treasury review', () => pm.response.to.have.status(201));"] } }]
+    },
+    {
+      "name": "Login parent",
+      "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"email\":\"carlos.gonzalez@mail.com\",\"password\":\"padre123\"}" }, "url": "{{baseUrl}}/api/auth/login" },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.collectionVariables.set('parentToken', pm.response.json().token); pm.test('Parent authenticates', () => pm.response.to.have.status(200));"] } }]
+    },
+    {
+      "name": "Parent lists linked children",
+      "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{parentToken}}" }], "url": "{{baseUrl}}/api/parents/students" },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('Parent only receives linked children', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().students[0].id).to.eql(Number(pm.collectionVariables.get('studentId'))); });"] } }]
+    },
+    {
+      "name": "Parent reads child account",
+      "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{parentToken}}" }], "url": "{{baseUrl}}/api/payments/accounts/{{studentId}}" },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('Parent can read linked child account', () => pm.response.to.have.status(200));"] } }]
+    },
+    {
+      "name": "Login teacher",
+      "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"email\":\"laura.mendez@gradeful.edu\",\"password\":\"profesor123\"}" }, "url": "{{baseUrl}}/api/auth/login" },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.collectionVariables.set('teacherToken', pm.response.json().token); pm.test('Teacher authenticates', () => pm.response.to.have.status(200));"] } }]
+    },
+    {
+      "name": "Teacher sees assigned group",
+      "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{teacherToken}}" }], "url": "{{baseUrl}}/api/groups" },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('Teacher scope is limited to assigned groups', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().groups.map(g => g.id)).to.include(Number(pm.collectionVariables.get('groupId'))); });"] } }]
+    },
+    {
+      "name": "Teacher cannot access financial reports",
+      "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{teacherToken}}" }], "url": "{{baseUrl}}/api/reports/debtors" },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('Role segmentation blocks teacher financial reports', () => pm.response.to.have.status(403));"] } }]
+    },
+    {
+      "name": "Teacher cannot access student account",
+      "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{teacherToken}}" }], "url": "{{baseUrl}}/api/payments/accounts/{{studentId}}" },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('Teacher cannot read financial account data', () => pm.response.to.have.status(403));"] } }]
+    }
+  ]
+}

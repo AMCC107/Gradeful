@@ -1,5 +1,6 @@
 const { getDb } = require('../config/database');
 const { validateActivityPayload } = require('../utils/academicValidation');
+const { canAccessGroup, ROLE_TEACHER } = require('../utils/access');
 
 function mapActivity(row) {
   if (!row) return null;
@@ -70,6 +71,10 @@ async function listActivities(req, res) {
       conditions.push('t.user_id = ?');
       params.push(Number(teacher_user_id));
     }
+    if (req.user.role_id === ROLE_TEACHER) {
+      conditions.push('t.user_id = ?');
+      params.push(req.user.id);
+    }
 
     const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
     const db = await getDb();
@@ -92,7 +97,7 @@ async function listActivities(req, res) {
  */
 async function listPendingForStudent(req, res) {
   try {
-    const userId = Number(req.query.user_id);
+    const userId = req.user.id;
     if (!userId || Number.isNaN(userId)) {
       return res.status(400).json({
         message: 'user_id es obligatorio.',
@@ -138,6 +143,9 @@ async function createActivity(req, res) {
 
     const values = validation.values;
     const db = await getDb();
+    if (!(await canAccessGroup(db, req.user, values.group_id, { write: true }))) {
+      return res.status(403).json({ message: 'No puedes crear actividades en este grupo.' });
+    }
     const group = await db.get('SELECT id FROM groups WHERE id = ?', [values.group_id]);
     if (!group) {
       return validationError(res, { group_id: 'El grupo indicado no existe.' });
@@ -170,12 +178,18 @@ async function updateActivity(req, res) {
     }
 
     const db = await getDb();
-    const current = await db.get('SELECT id FROM activities_tasks WHERE id = ?', [id]);
+    const current = await db.get('SELECT id, group_id FROM activities_tasks WHERE id = ?', [id]);
     if (!current) {
       return res.status(404).json({ message: 'Actividad no encontrada.' });
     }
 
     const values = validation.values;
+    if (
+      !(await canAccessGroup(db, req.user, current.group_id, { write: true })) ||
+      !(await canAccessGroup(db, req.user, values.group_id, { write: true }))
+    ) {
+      return res.status(403).json({ message: 'No puedes modificar esta actividad.' });
+    }
     const group = await db.get('SELECT id FROM groups WHERE id = ?', [values.group_id]);
     if (!group) {
       return validationError(res, { group_id: 'El grupo indicado no existe.' });
@@ -211,9 +225,13 @@ async function deleteActivity(req, res) {
   try {
     const { id } = req.params;
     const db = await getDb();
-    const current = await db.get('SELECT id FROM activities_tasks WHERE id = ?', [id]);
+    const current = await db.get('SELECT id, group_id FROM activities_tasks WHERE id = ?', [id]);
     if (!current) {
       return res.status(404).json({ message: 'Actividad no encontrada.' });
+    }
+
+    if (!(await canAccessGroup(db, req.user, current.group_id, { write: true }))) {
+      return res.status(403).json({ message: 'No puedes eliminar esta actividad.' });
     }
 
     await db.run('DELETE FROM activities_tasks WHERE id = ?', [id]);

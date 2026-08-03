@@ -1,42 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Save } from 'lucide-react';
 import { EditableTable } from '../../components/ui';
 import { AdminPageHero, FeedbackBanner, inputClass } from '../admin/shared/AdminUi';
-
-const MOCK_GROUPS = [
-  { id: 'g1', label: '6A · Ingeniería de Software' },
-  { id: 'g2', label: '5B · Ciencias de la Computación' },
-  { id: 'g3', label: '4A · Desarrollo Web' },
-];
-
-const MOCK_SUBJECTS = [
-  { id: 's1', label: 'Desarrollo de Aplicaciones Web' },
-  { id: 's2', label: 'Bases de Datos II' },
-  { id: 's3', label: 'Inteligencia Artificial' },
-];
-
-const INITIAL_ROWS = [
-  { id: 1, alumno: 'Ana Pérez López', p1: 9.5, p2: 9.0, p3: 10.0 },
-  { id: 2, alumno: 'Carlos Mendoza Ruiz', p1: 8.0, p2: 8.5, p3: 8.8 },
-  { id: 3, alumno: 'Diana Soto Vargas', p1: 10.0, p2: 9.8, p3: 9.5 },
-  { id: 4, alumno: 'Eduardo Ramírez Cruz', p1: 7.5, p2: 8.0, p3: 7.8 },
-  { id: 5, alumno: 'Fernanda Gil Ortega', p1: 9.2, p2: 9.4, p3: 9.0 },
-  { id: 6, alumno: 'Gabriel Núñez Peña', p1: 8.8, p2: 9.0, p3: 9.2 },
-];
-
-function calcAverage(p1, p2, p3) {
-  const values = [p1, p2, p3].filter((v) => v != null && !Number.isNaN(Number(v)));
-  if (values.length === 0) return null;
-  const sum = values.reduce((acc, v) => acc + Number(v), 0);
-  return Number((sum / values.length).toFixed(1));
-}
-
-function withAverages(rows) {
-  return rows.map((row) => ({
-    ...row,
-    promedio: calcAverage(row.p1, row.p2, row.p3),
-  }));
-}
+import { fetchGroups } from '../../services/groups.service';
+import { fetchGroupGrades, saveGroupGrades } from '../../services/grades.service';
 
 const COLUMNS = [
   { id: 'alumno', label: 'Alumno', type: 'text', editable: false, width: '220px' },
@@ -46,98 +13,100 @@ const COLUMNS = [
   { id: 'promedio', label: 'Promedio Final', type: 'number', editable: false, width: '130px' },
 ];
 
-function TeacherGradesView() {
-  const [groupId, setGroupId] = useState(MOCK_GROUPS[0].id);
-  const [subjectId, setSubjectId] = useState(MOCK_SUBJECTS[0].id);
-  const [rows, setRows] = useState(() => withAverages(INITIAL_ROWS));
-  const [feedback, setFeedback] = useState({ error: '', success: '' });
+function average(row) {
+  const values = [row.p1, row.p2, row.p3]
+    .filter((value) => value !== '' && value != null && !Number.isNaN(Number(value)))
+    .map(Number);
+  return values.length
+    ? Number((values.reduce((sum, value) => sum + value, 0) / values.length).toFixed(1))
+    : null;
+}
 
+function TeacherGradesView() {
+  const [groups, setGroups] = useState([]);
+  const [groupId, setGroupId] = useState('');
+  const [periods, setPeriods] = useState([]);
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [feedback, setFeedback] = useState({ error: '', success: '' });
   const columns = useMemo(() => COLUMNS, []);
+  const selectedGroup = groups.find((group) => String(group.id) === String(groupId));
+
+  useEffect(() => {
+    fetchGroups()
+      .then((data) => {
+        setGroups(data);
+        setGroupId((current) => current || String(data[0]?.id ?? ''));
+        if (!data.length) setLoading(false);
+      })
+      .catch((error) => {
+        setFeedback({ error: error.message, success: '' });
+        setLoading(false);
+      });
+  }, []);
+
+  useEffect(() => {
+    if (!groupId) return;
+    fetchGroupGrades(groupId)
+      .then((data) => {
+        setPeriods(data.periods ?? []);
+        setRows((data.rows ?? []).map((row) => ({ ...row, promedio: average(row) })));
+        setFeedback({ error: '', success: '' });
+      })
+      .catch((error) => setFeedback({ error: error.message, success: '' }))
+      .finally(() => setLoading(false));
+  }, [groupId]);
 
   const handleChange = (rowId, columnId, value) => {
-    if (columnId === 'promedio') return;
-    setRows((prev) =>
-      prev.map((row) => {
-        if (row.id !== rowId) return row;
-        const next = { ...row, [columnId]: value };
-        return { ...next, promedio: calcAverage(next.p1, next.p2, next.p3) };
-      }),
-    );
+    setRows((current) => current.map((row) => {
+      if (row.id !== rowId) return row;
+      const next = { ...row, [columnId]: value };
+      return { ...next, promedio: average(next) };
+    }));
   };
 
-  const handleSave = () => {
-    setFeedback({
-      error: '',
-      success: 'Calificaciones guardadas correctamente (simulación).',
-    });
+  const handleSave = async () => {
+    setSaving(true);
+    setFeedback({ error: '', success: '' });
+    try {
+      const grades = rows.flatMap((row) => periods.flatMap((period) => {
+        const value = row[`p${period.numero}`];
+        return value === '' || value == null
+          ? []
+          : [{ student_id: row.student_id, period_id: period.id, calificacion: Number(value) }];
+      }));
+      const result = await saveGroupGrades(groupId, { grades });
+      setFeedback({ error: '', success: result.message });
+    } catch (error) {
+      setFeedback({ error: error.message, success: '' });
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
     <div className="flex flex-col gap-6">
-      <AdminPageHero
-        eyebrow="Portal docente"
-        title="Calificaciones"
-        description="Captura parciales y consulta el promedio final calculado automáticamente."
-      />
-
-      <FeedbackBanner
-        error={feedback.error}
-        success={feedback.success}
-        onDismiss={() => setFeedback({ error: '', success: '' })}
-      />
-
+      <AdminPageHero eyebrow="Portal docente" title="Calificaciones" description="Captura parciales y consulta el promedio final calculado automáticamente." />
+      <FeedbackBanner {...feedback} onDismiss={() => setFeedback({ error: '', success: '' })} />
       <div className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:grid-cols-2">
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-slate-700" htmlFor="grd-group">
-            Grupo
-          </label>
-          <select
-            id="grd-group"
-            value={groupId}
-            onChange={(e) => setGroupId(e.target.value)}
-            className={inputClass}
-          >
-            {MOCK_GROUPS.map((group) => (
-              <option key={group.id} value={group.id}>
-                {group.label}
-              </option>
-            ))}
+          <label className="mb-1.5 block text-sm font-medium text-slate-700" htmlFor="grd-group">Grupo</label>
+          <select id="grd-group" value={groupId} onChange={(event) => setGroupId(event.target.value)} className={inputClass}>
+            {groups.map((group) => <option key={group.id} value={group.id}>{group.course_nombre} {group.nombre} · {group.turno}</option>)}
           </select>
         </div>
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-slate-700" htmlFor="grd-subject">
-            Materia
-          </label>
-          <select
-            id="grd-subject"
-            value={subjectId}
-            onChange={(e) => setSubjectId(e.target.value)}
-            className={inputClass}
-          >
-            {MOCK_SUBJECTS.map((subject) => (
-              <option key={subject.id} value={subject.id}>
-                {subject.label}
-              </option>
-            ))}
-          </select>
+          <label className="mb-1.5 block text-sm font-medium text-slate-700">Materia asignada</label>
+          <div className={`${inputClass} bg-slate-50`}>{selectedGroup?.subject_nombre || 'Sin grupo seleccionado'}</div>
         </div>
       </div>
-
-      <EditableTable
-        columns={columns}
-        data={rows}
-        onChange={handleChange}
-        emptyMessage="No hay alumnos en este grupo."
-      />
-
+      {loading ? <p className="text-sm text-slate-500">Cargando calificaciones…</p> : (
+        <EditableTable columns={columns} data={rows} onChange={handleChange} emptyMessage="No hay alumnos en este grupo." />
+      )}
       <div className="flex justify-end">
-        <button
-          type="button"
-          onClick={handleSave}
-          className="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700"
-        >
-          <Save className="size-4" />
-          Guardar Calificaciones
+        <button type="button" disabled={saving || !rows.length} onClick={handleSave} className="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700 disabled:opacity-50">
+          <Save className="size-4" />{saving ? 'Guardando…' : 'Guardar Calificaciones'}
         </button>
       </div>
     </div>

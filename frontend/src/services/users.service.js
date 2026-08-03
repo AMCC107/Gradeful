@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
+import { API_URL, authHeaders } from './api.client';
 
 export class ApiError extends Error {
   constructor(message, { status = 500, errors = null } = {}) {
@@ -34,7 +34,7 @@ function buildUsersQuery(filters = {}) {
 }
 
 export async function fetchUsers(filters = {}) {
-  const response = await fetch(`${API_URL}/api/users${buildUsersQuery(filters)}`);
+  const response = await fetch(`${API_URL}/api/users${buildUsersQuery(filters)}`, { headers: authHeaders() });
   const data = await parseResponse(response);
   return {
     users: data.users ?? [],
@@ -45,7 +45,7 @@ export async function fetchUsers(filters = {}) {
 export async function createUser(payload) {
   const response = await fetch(`${API_URL}/api/users`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: authHeaders(),
     body: JSON.stringify(payload),
   });
   return parseResponse(response);
@@ -54,7 +54,7 @@ export async function createUser(payload) {
 export async function updateUser(id, payload) {
   const response = await fetch(`${API_URL}/api/users/${id}`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+    headers: authHeaders(),
     body: JSON.stringify(payload),
   });
   return parseResponse(response);
@@ -63,6 +63,7 @@ export async function updateUser(id, payload) {
 export async function deactivateUser(id) {
   const response = await fetch(`${API_URL}/api/users/${id}/deactivate`, {
     method: 'PATCH',
+    headers: authHeaders(),
   });
   return parseResponse(response);
 }

@@ -1,5 +1,6 @@
 const { getDb } = require('../config/database');
 const { validateGroupPayload } = require('../utils/academicValidation');
+const { canAccessGroup, ROLE_ADMIN, ROLE_PARENT, ROLE_STUDENT, ROLE_TEACHER } = require('../utils/access');
 
 function mapGroup(row) {
   if (!row) return null;
@@ -10,6 +11,9 @@ function mapGroup(row) {
     course_id: row.course_id,
     subject_id: row.subject_id,
     teacher_id: row.teacher_id,
+    school_cycle_id: row.school_cycle_id,
+    nombre: row.nombre,
+    turno: row.turno,
     capacidad_maxima: capacidad,
     inscritos,
     cupos_disponibles: Math.max(capacidad - inscritos, 0),
@@ -26,7 +30,8 @@ function validationError(res, errors, message = 'Datos de grupo inválidos.') {
 }
 
 const GROUP_SELECT = `
-  SELECT g.id, g.course_id, g.subject_id, g.teacher_id, g.capacidad_maxima,
+  SELECT g.id, g.course_id, g.subject_id, g.teacher_id, g.school_cycle_id,
+         g.nombre, g.turno, g.capacidad_maxima,
          c.nombre AS course_nombre, c.nivel AS course_nivel,
          s.nombre AS subject_nombre,
          u.nombre AS teacher_nombre, t.numero_empleado AS teacher_empleado,
@@ -38,7 +43,7 @@ const GROUP_SELECT = `
   INNER JOIN users u ON u.id = t.user_id
 `;
 
-async function assertGroupRefs(db, { course_id, subject_id, teacher_id }) {
+async function assertGroupRefs(db, { course_id, subject_id, teacher_id, school_cycle_id }) {
   const errors = {};
   const course = await db.get('SELECT id FROM courses WHERE id = ?', [course_id]);
   if (!course) errors.course_id = 'El curso indicado no existe.';
@@ -51,6 +56,11 @@ async function assertGroupRefs(db, { course_id, subject_id, teacher_id }) {
     [teacher_id]
   );
   if (!teacher) errors.teacher_id = 'El profesor no existe o está inactivo.';
+
+  if (school_cycle_id) {
+    const cycle = await db.get('SELECT id FROM school_cycles WHERE id = ?', [school_cycle_id]);
+    if (!cycle) errors.school_cycle_id = 'El ciclo escolar indicado no existe.';
+  }
 
   return errors;
 }
@@ -80,6 +90,23 @@ async function listGroups(req, res) {
       params.push(Number(req.query.teacher_user_id));
     }
 
+    if (req.user.role_id === ROLE_TEACHER) {
+      conditions.push('t.user_id = ?');
+      params.push(req.user.id);
+    } else if (req.user.role_id === ROLE_STUDENT) {
+      conditions.push(
+        'EXISTS (SELECT 1 FROM enrollments access_e INNER JOIN students access_s ON access_s.id = access_e.student_id WHERE access_e.group_id = g.id AND access_s.user_id = ?)'
+      );
+      params.push(req.user.id);
+    } else if (req.user.role_id === ROLE_PARENT) {
+      conditions.push(
+        'EXISTS (SELECT 1 FROM enrollments access_e INNER JOIN parent_students access_ps ON access_ps.student_id = access_e.student_id WHERE access_e.group_id = g.id AND access_ps.parent_user_id = ? AND access_ps.is_active = 1)'
+      );
+      params.push(req.user.id);
+    } else if (req.user.role_id !== ROLE_ADMIN) {
+      return res.json({ groups: [] });
+    }
+
     const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
     const db = await getDb();
     const rows = await db.all(
@@ -98,6 +125,9 @@ async function listGroups(req, res) {
 async function getGroup(req, res) {
   try {
     const db = await getDb();
+    if (!(await canAccessGroup(db, req.user, req.params.id))) {
+      return res.status(403).json({ message: 'No tienes acceso a este grupo.' });
+    }
     const row = await db.get(`${GROUP_SELECT} WHERE g.id = ?`, [req.params.id]);
     if (!row) {
       return res.status(404).json({ message: 'Grupo no encontrado.' });
@@ -125,9 +155,18 @@ async function createGroup(req, res) {
     }
 
     const result = await db.run(
-      `INSERT INTO groups (course_id, subject_id, teacher_id, capacidad_maxima)
-       VALUES (?, ?, ?, ?)`,
-      [values.course_id, values.subject_id, values.teacher_id, values.capacidad_maxima]
+      `INSERT INTO groups
+        (course_id, subject_id, teacher_id, school_cycle_id, nombre, turno, capacidad_maxima)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [
+        values.course_id,
+        values.subject_id,
+        values.teacher_id,
+        values.school_cycle_id,
+        values.nombre,
+        values.turno,
+        values.capacidad_maxima,
+      ]
     );
 
     const row = await db.get(`${GROUP_SELECT} WHERE g.id = ?`, [result.lastID]);
@@ -174,9 +213,19 @@ async function updateGroup(req, res) {
 
     await db.run(
       `UPDATE groups
-       SET course_id = ?, subject_id = ?, teacher_id = ?, capacidad_maxima = ?
+       SET course_id = ?, subject_id = ?, teacher_id = ?, school_cycle_id = ?,
+           nombre = ?, turno = ?, capacidad_maxima = ?
        WHERE id = ?`,
-      [values.course_id, values.subject_id, values.teacher_id, values.capacidad_maxima, id]
+      [
+        values.course_id,
+        values.subject_id,
+        values.teacher_id,
+        values.school_cycle_id,
+        values.nombre,
+        values.turno,
+        values.capacidad_maxima,
+        id,
+      ]
     );
 
     const row = await db.get(`${GROUP_SELECT} WHERE g.id = ?`, [id]);
@@ -195,6 +244,9 @@ async function deleteGroup(req, res) {
   try {
     const { id } = req.params;
     const db = await getDb();
+    if (!(await canAccessGroup(db, req.user, id, { write: true }))) {
+      return res.status(403).json({ message: 'No tienes acceso a este grupo.' });
+    }
     const current = await db.get('SELECT id FROM groups WHERE id = ?', [id]);
     if (!current) {
       return res.status(404).json({ message: 'Grupo no encontrado.' });
@@ -213,6 +265,9 @@ async function listGroupStudents(req, res) {
   try {
     const { id } = req.params;
     const db = await getDb();
+    if (!(await canAccessGroup(db, req.user, id, { write: true }))) {
+      return res.status(403).json({ message: 'No tienes acceso a este grupo.' });
+    }
     const group = await db.get(`${GROUP_SELECT} WHERE g.id = ?`, [id]);
     if (!group) {
       return res.status(404).json({ message: 'Grupo no encontrado.' });

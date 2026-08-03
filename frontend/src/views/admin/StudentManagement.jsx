@@ -1,12 +1,8 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { Eye, Pencil, UserMinus, UserPlus, RefreshCw, Search, Upload, X } from 'lucide-react';
 import { useStudentManagement } from '../../controllers/hooks/useStudentManagement';
 import { ExportButtons } from '../../components/ui';
-import {
-  mockExportStudentsExcel,
-  mockExportStudentsPDF,
-  mockImportStudentsFile,
-} from '../../utils/studentImportExport.mock';
+import { exportStudentsExcel, exportStudentsPdf, importStudents } from '../../services/students.service';
 import {
   AdminPageHero,
   FeedbackBanner,
@@ -19,7 +15,6 @@ import StudentProfile360 from './StudentProfile360';
 
 function StudentEditModal({
   open,
-  editing,
   form,
   fieldErrors,
   eligibleUsers,
@@ -131,7 +126,6 @@ function StudentManagement() {
     fieldErrors,
     filters,
     isEditModalOpen,
-    editing,
     editForm,
     viewingStudent,
     profileTab,
@@ -140,15 +134,23 @@ function StudentManagement() {
   } = useStudentManagement();
 
   const importInputRef = useRef(null);
+  const [transferFeedback, setTransferFeedback] = useState({ error: '', success: '' });
   const hasFilters = Boolean(filters.search || filters.status);
 
   const handleImportClick = () => {
     importInputRef.current?.click();
   };
 
-  const handleImportChange = (event) => {
+  const handleImportChange = async (event) => {
     const file = event.target.files?.[0] ?? null;
-    mockImportStudentsFile(file);
+    if (!file) return;
+    try {
+      const result = await importStudents(file);
+      setTransferFeedback({ error: '', success: `${result.message} ${result.summary.created} alumno(s) creado(s).` });
+      await handlers.onRefresh();
+    } catch (requestError) {
+      setTransferFeedback({ error: requestError.message, success: '' });
+    }
     event.target.value = '';
   };
 
@@ -165,6 +167,7 @@ function StudentManagement() {
         success={success}
         onDismiss={handlers.onDismissFeedback}
       />
+      <FeedbackBanner {...transferFeedback} onDismiss={() => setTransferFeedback({ error: '', success: '' })} />
 
       <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
@@ -176,8 +179,8 @@ function StudentManagement() {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <ExportButtons
-              onExportPDF={() => mockExportStudentsPDF(students)}
-              onExportExcel={() => mockExportStudentsExcel(students)}
+              onExportPDF={() => exportStudentsPdf().catch((requestError) => setTransferFeedback({ error: requestError.message, success: '' }))}
+              onExportExcel={() => exportStudentsExcel().catch((requestError) => setTransferFeedback({ error: requestError.message, success: '' }))}
             />
             <button
               type="button"
@@ -185,12 +188,12 @@ function StudentManagement() {
               className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700"
             >
               <Upload className="size-4" />
-              Importar Alumnos (CSV/Excel)
+              Importar Alumnos (Excel)
             </button>
             <input
               ref={importInputRef}
               type="file"
-              accept=".csv,.xlsx,.xls,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+              accept=".xlsx,.xls,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
               className="sr-only"
               onChange={handleImportChange}
             />
@@ -351,7 +354,6 @@ function StudentManagement() {
 
       <StudentEditModal
         open={isEditModalOpen}
-        editing={editing}
         form={editForm}
         fieldErrors={fieldErrors}
         eligibleUsers={eligibleUsers}

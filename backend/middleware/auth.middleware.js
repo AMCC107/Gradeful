@@ -83,4 +83,17 @@ function checkPermission(permissionName) {
   };
 }
 
-module.exports = { authenticate, checkPermission };
+function authorizeRoles(...roleIds) {
+  const allowed = roleIds.map(Number);
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ message: 'No autenticado.' });
+    }
+    if (!allowed.includes(Number(req.user.role_id))) {
+      return res.status(403).json({ message: 'No tienes acceso a este recurso.' });
+    }
+    return next();
+  };
+}
+
+module.exports = { authenticate, checkPermission, authorizeRoles };

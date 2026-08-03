@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   AlertCircle,
   AlertTriangle,
@@ -9,12 +9,11 @@ import {
 } from 'lucide-react';
 import { FileUpload } from '../../../components/ui';
 import { AdminPageHero, FeedbackBanner } from '../../admin/shared/AdminUi';
-import { PAYMENTS_BY_STUDENT } from '../../../contexts/ParentStudentContext';
-
-const DEFAULT_PAYMENTS = PAYMENTS_BY_STUDENT['child-2'];
+import { getAuthUser } from '../../../models/auth.model';
+import { fetchStudentAccount, submitPaymentProof } from '../../../services/payments.service';
 
 function formatCurrency(amount) {
-  return `$${Number(amount).toFixed(2)} USD`;
+  return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(Number(amount));
 }
 
 /**
@@ -36,27 +35,53 @@ function StudentPaymentsView({
   eyebrow = 'Portal estudiantil',
   readOnly = false,
 }) {
-  const dataset = studentId ? PAYMENTS_BY_STUDENT[studentId] : null;
-  const summary = accountSummary ?? dataset?.accountSummary ?? DEFAULT_PAYMENTS.accountSummary;
-  const charges = pendingCharges ?? dataset?.pendingCharges ?? DEFAULT_PAYMENTS.pendingCharges;
-  const history = paymentHistory ?? dataset?.paymentHistory ?? DEFAULT_PAYMENTS.paymentHistory;
+  const authUser = getAuthUser();
+  const resolvedStudentId = studentId ?? authUser?.studentRecordId;
+  const [account, setAccount] = useState(null);
+  const [loading, setLoading] = useState(Boolean(resolvedStudentId && !accountSummary));
+  const [requestError, setRequestError] = useState('');
+  const summary = accountSummary ?? account?.accountSummary ?? { currentBalance: 0, overdueCount: 0, upcomingCount: 0 };
+  const charges = pendingCharges ?? account?.pendingCharges ?? [];
+  const history = paymentHistory ?? account?.paymentHistory ?? [];
 
   const [receiptFile, setReceiptFile] = useState(null);
   const [feedback, setFeedback] = useState({ error: '', success: '' });
 
-  const overdueCharges = charges.filter((item) => item.status === 'vencido');
-  const upcomingCharges = charges.filter((item) => item.status === 'proximo');
+  useEffect(() => {
+    if (!resolvedStudentId || accountSummary) return;
+    let active = true;
+    fetchStudentAccount(resolvedStudentId)
+      .then((data) => {
+        if (active) {
+          setAccount(data);
+          setRequestError('');
+        }
+      })
+      .catch((error) => {
+        if (active) setRequestError(error?.message || 'No se pudo cargar el estado de cuenta.');
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => { active = false; };
+  }, [resolvedStudentId, accountSummary]);
 
-  const handleReportTransfer = (event) => {
+  const overdueCharges = charges.filter((item) => item.status === 'vencido');
+  const upcomingCharges = charges.filter((item) => ['proximo', 'adeudo'].includes(item.status));
+
+  const handleReportTransfer = async (event) => {
     event.preventDefault();
     if (!receiptFile) {
       setFeedback({ error: 'Adjunta un comprobante (PDF o imagen) para continuar.', success: '' });
       return;
     }
-    setFeedback({
-      error: '',
-      success: `Comprobante "${receiptFile.name}" enviado. Tesorería lo revisará pronto.`,
-    });
+    try {
+      const result = await submitPaymentProof(resolvedStudentId, charges[0]?.id, receiptFile);
+      setFeedback({ error: '', success: result.message });
+      setReceiptFile(null);
+    } catch (error) {
+      setFeedback({ error: error.message, success: '' });
+    }
   };
 
   return (
@@ -70,6 +95,9 @@ function StudentPaymentsView({
             : 'Consulta saldo, cargos pendientes e historial de pagos. Reporta transferencias con tu comprobante.'
         }
       />
+
+      {loading && <p className="text-sm text-slate-500">Cargando estado de cuenta…</p>}
+      {requestError && <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{requestError}</p>}
 
       {!readOnly && (
         <FeedbackBanner
