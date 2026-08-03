@@ -31,3 +31,37 @@
     min-height: 100svh;
   }
 }
+
+/* ── Print: boleta PDF ─────────────────────────────────────────────────── */
+.print-only-boleta {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 12mm;
+  }
+
+  body.printing-boleta {
+    background: white !important;
+  }
+
+  body.printing-boleta .no-print,
+  body.printing-boleta nav,
+  body.printing-boleta aside,
+  body.printing-boleta header {
+    display: none !important;
+  }
+
+  body.printing-boleta .print-only-boleta {
+    display: block !important;
+  }
+
+  body.printing-boleta .boleta-print-sheet {
+    box-shadow: none !important;
+    border: none !important;
+    width: 100% !important;
+    max-width: none !important;
+  }
+}

@@ -16,6 +16,7 @@ import GroupManagement from '../views/admin/GroupManagement';
 import EnrollmentManagement from '../views/admin/EnrollmentManagement';
 import PaymentConceptsView from '../views/admin/PaymentConceptsView';
 import TreasuryView from '../views/admin/TreasuryView';
+import AdminDashboardView from '../views/admin/AdminDashboardView';
 import TeacherActivitiesView from '../views/teacher/TeacherActivitiesView';
 import TeacherAttendanceView from '../views/teacher/TeacherAttendanceView';
 import TeacherGradesView from '../views/teacher/TeacherGradesView';
@@ -60,7 +61,7 @@ function AppRouter() {
 
       <Route path="/admin" element={<AdminPortalController />}>
         <Route index element={<Navigate to="gestion-alumnos" replace />} />
-        <Route path="resumen" element={<PortalPlaceholderView />} />
+        <Route path="resumen" element={<AdminDashboardView />} />
         <Route path="gestion-alumnos" element={<StudentManagement />} />
         <Route path="gestion-profesores" element={<TeacherManagement />} />
         <Route path="gestion-materias" element={<SubjectManagement />} />

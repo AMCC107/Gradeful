@@ -13,6 +13,7 @@ function ParentGradesView() {
         studentId={selectedStudent?.id}
         studentName={selectedStudent?.name}
         programLabel={selectedStudent?.program}
+        matricula={selectedStudent?.matricula}
         eyebrow="Portal de padres"
         readOnly
       />
