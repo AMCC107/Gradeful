@@ -1,5 +1,12 @@
-import { Eye, Pencil, UserMinus, UserPlus, RefreshCw, Search, X } from 'lucide-react';
+import { useRef } from 'react';
+import { Eye, Pencil, UserMinus, UserPlus, RefreshCw, Search, Upload, X } from 'lucide-react';
 import { useStudentManagement } from '../../controllers/hooks/useStudentManagement';
+import { ExportButtons } from '../../components/ui';
+import {
+  mockExportStudentsExcel,
+  mockExportStudentsPDF,
+  mockImportStudentsFile,
+} from '../../utils/studentImportExport.mock';
 import {
   AdminPageHero,
   FeedbackBanner,
@@ -132,7 +139,18 @@ function StudentManagement() {
     handlers,
   } = useStudentManagement();
 
+  const importInputRef = useRef(null);
   const hasFilters = Boolean(filters.search || filters.status);
+
+  const handleImportClick = () => {
+    importInputRef.current?.click();
+  };
+
+  const handleImportChange = (event) => {
+    const file = event.target.files?.[0] ?? null;
+    mockImportStudentsFile(file);
+    event.target.value = '';
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -156,7 +174,26 @@ function StudentManagement() {
               {loading ? 'Cargando…' : `${students.length} alumno${students.length === 1 ? '' : 's'}`}
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <ExportButtons
+              onExportPDF={() => mockExportStudentsPDF(students)}
+              onExportExcel={() => mockExportStudentsExcel(students)}
+            />
+            <button
+              type="button"
+              onClick={handleImportClick}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700"
+            >
+              <Upload className="size-4" />
+              Importar Alumnos (CSV/Excel)
+            </button>
+            <input
+              ref={importInputRef}
+              type="file"
+              accept=".csv,.xlsx,.xls,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+              className="sr-only"
+              onChange={handleImportChange}
+            />
             <button
               type="button"
               onClick={handlers.onRefresh}
